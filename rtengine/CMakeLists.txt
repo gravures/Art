@@ -162,6 +162,7 @@ set(RTENGINESOURCEFILES
     filmnegativethumb.cc
     canon_cr3_decoder.cc
     rawimage_gainmap.cc
+    rawimage_foveon.cc
     subprocess.cc
     bayer_bilinear_demosaic.cc
     gainmap.cc
@@ -170,6 +171,8 @@ set(RTENGINESOURCEFILES
     lensexif.cc
     nlmeans.cc
     newdelete.cc
+    x3f_tools/x3f_printf.cc
+    x3f_tools/x3f_io.cc
     )
 
 
