@@ -23,6 +23,7 @@
 #endif // ART_USE_LIBRAW
 
 
+
 namespace rtengine {
 
 extern const Settings *settings;
@@ -37,6 +38,7 @@ RawImage::RawImage(const Glib::ustring &name)
     , rotate_deg(0)
     , profile_data(nullptr)
     , allocation(nullptr)
+    , foveon_helper(nullptr)
     , thumb_data(nullptr)
     , use_internal_decoder_(true)
 {
@@ -82,6 +84,11 @@ RawImage::~RawImage()
         profile_data = nullptr;
     }
 
+    if(foveon_helper) {
+        delete foveon_helper;
+        foveon_helper = nullptr;
+    }
+    
     if (thumb_data) {
         delete[] thumb_data;
     }
@@ -682,6 +689,10 @@ int RawImage::loadRaw (bool loadData, unsigned int imageNum, bool closeFile, Pro
         }
 
         return 2;
+    }
+    
+    if(get_maker()=="Sigma" && FoveonHelper::is_supported(get_model())){
+        if(!foveon_helper) foveon_helper = new FoveonHelper(this);
     }
 
     if (use_internal_decoder_) {

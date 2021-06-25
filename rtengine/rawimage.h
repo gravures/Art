@@ -27,6 +27,7 @@
 #include "dcraw.h"
 #include "imageformat.h"
 #include "gainmap.h"
+#include "foveon.h"
 
 #ifdef ART_USE_LIBRAW
 class LibRaw;
@@ -76,14 +77,19 @@ protected:
     std::unique_ptr<LibRaw> libraw_;
 #endif // ART_USE_LIBRAW
 
+    FoveonHelper* foveon_helper;
+
 public:
     bool isFoveon() const
     {
         return is_foveon;
     }
+    
+    FoveonHelper *get_foveon_helper() const{
+        return foveon_helper;
+    }
+    
     bool has_gain_map(std::vector<uint8_t> *out_buf) const;
-    std::vector<GainMap> read_foveon_spatial_gain();
-    bool get_foveon_camf_rect(uint32_t *crect);
 
     static void initCameraConstants(Glib::ustring baseDir);
     std::string get_filename() const { return filename; }
