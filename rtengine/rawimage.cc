@@ -372,6 +372,13 @@ skip_block:
             pre_mul_[1] = this->get_cam_mul(1);
             pre_mul_[2] = this->get_cam_mul(2);
             pre_mul_[3] = this->get_cam_mul(3);
+        } else if(foveon_helper){
+        	float tmp[4];
+        	if(foveon_helper->get_wbGain(tmp)){
+        		tmp[3] = 0;
+        		for (int i=0; i<4; i++)
+        			pre_mul_[i] = cam_mul[i] = float(tmp[i]);
+        	}
         } else {
             // try getting from makernotes
             bool ok = true;
@@ -396,7 +403,7 @@ skip_block:
                 ok = false;
             }
             if (!ok) {
-                fprintf(stderr, "Cannot use camera white balance.\n");
+                fprintf(stderr, "Cannot use camera white balance (get_colorsCoeff()).\n");
             } else {
                 for (int i = 0; i < 4; ++i) {
                     pre_mul_[i] = cam_mul[i] = cmul[i];
@@ -479,10 +486,12 @@ skip_block:
 
         printf("cam_mul:[%f %f %f %f], AsShotNeutral:[%f %f %f %f]\n",
                cam_mul[0], cam_mul[1], cam_mul[2], cam_mul[3], asn[0], asn[1], asn[2], asn[3]);
-        printf("pre_mul:[%f %f %f %f], scale_mul:[%f %f %f %f], cblack:[%f %f %f %f]\n",
-               pre_mul_[0], pre_mul_[1], pre_mul_[2], pre_mul_[3],
+        printf("pre_mul:[%f %f %f %f], pre_mul_:[%f %f %f %f],\nscale_mul:[%f %f %f %f], cblack:[%f %f %f %f], white:[%d %d %d %d]\n",
+        	   get_pre_mul(0), get_pre_mul(1), get_pre_mul(2), get_pre_mul(3),
+        	   pre_mul_[0], pre_mul_[1], pre_mul_[2], pre_mul_[3],
                scale_mul_[0], scale_mul_[1], scale_mul_[2], scale_mul_[3],
-               cblack_[0], cblack_[1], cblack_[2], cblack_[3]);
+               cblack_[0], cblack_[1], cblack_[2], cblack_[3],
+               this->get_white(0), this->get_white(1), this->get_white(2), this->get_white(3));
         printf("rgb_cam:[ [ %f %f %f], [%f %f %f], [%f %f %f] ]%s\n",
                rgb_cam[0][0], rgb_cam[1][0], rgb_cam[2][0],
                rgb_cam[0][1], rgb_cam[1][1], rgb_cam[2][1],
@@ -809,6 +818,12 @@ int RawImage::loadRaw (bool loadData, unsigned int imageNum, bool closeFile, Pro
             RT_baseline_exposure = 0;
         }
 
+        if(isFoveon() && foveon_helper){
+        	double cam_xyz[4][3];
+            if (foveon_helper->get_cam_xyz(cam_xyz))
+            	this->cam_xyz_coeff(this->rgb_cam, cam_xyz);
+        }
+
         if (plistener) {
             plistener->setProgress(0.9 * progressRange);
         }
@@ -825,6 +840,7 @@ int RawImage::loadRaw (bool loadData, unsigned int imageNum, bool closeFile, Pro
             orig_raw_height = raw_height;
             
             if (cc && cc->has_rawCrop(raw_width, raw_height) && use_internal_decoder_) { 
+
                 raw_crop_cc = true;
                 int lm, tm, w, h;
                 cc->get_rawCrop(raw_width, raw_height, lm, tm, w, h);
@@ -991,6 +1007,9 @@ int RawImage::loadRaw (bool loadData, unsigned int imageNum, bool closeFile, Pro
                     black_c4[c] = black + cblack[c];
                 }
             }
+        } else if(isFoveon() && foveon_helper && foveon_helper->get_BlackLevels(black_c4)){
+        	// compute black levels for foveon from raw
+            black_from_cc = false;
         } else {
             black_from_cc = true;
         }
@@ -998,6 +1017,11 @@ int RawImage::loadRaw (bool loadData, unsigned int imageNum, bool closeFile, Pro
         if (maximum_c4[0] > 0) {
             white_from_cc = true;
         }
+        /*
+        if(isFoveon() && foveon_helper && foveon_helper->get_WhiteLevels(maximum_c4)){
+        	// compute white levels for foveon from raw
+        	white_from_cc = false;
+        }*/
 
         for (int c = 0; c < 4; c++) {
             if (static_cast<int>(cblack[c]) < black_c4[c]) {
