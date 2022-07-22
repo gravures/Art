@@ -347,6 +347,7 @@ if(OSX_UNIVERSAL)
             set(OSX_UNIVERSAL_URL "ART_macOS_x86_64_latest.zip" CACHE STRING "URL of x86_64 app for lipo")
         else()
             set(OSX_UNIVERSAL_URL "ART_macOS_arm64_latest.zip" CACHE STRING "URL of arm64 app for lipo")
+        endif()
     endif()
 endif()
 
