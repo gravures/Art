@@ -289,8 +289,8 @@ ditto "${PROJECT_SOURCE_DIR}/rtdata/fonts" "${ETC}/fonts"
 
 # App bundle resources
 ditto "${PROJECT_SOURCE_DATA_DIR}/"{ART,profile}.icns "${RESOURCES}"
-ditto "${PROJECT_SOURCE_DATA_DIR}/PkgInfo" "${CONTENTS}"
-cmake -DPROJECT_SOURCE_DATA_DIR=${PROJECT_SOURCE_DATA_DIR} -DCONTENTS=${CONTENTS} -Dversion=${PROJECT_FULL_VERSION} -DshortVersion=${PROJECT_VERSION} -Darch=${arch} -P "${PROJECT_SOURCE_DATA_DIR}/info-plist.cmake"
+#ditto "${PROJECT_SOURCE_DATA_DIR}/PkgInfo" "${CONTENTS}"
+cmake -DPROJECT_SOURCE_DATA_DIR=${PROJECT_SOURCE_DATA_DIR} -DCONTENTS=${CONTENTS} -Dversion=${PROJECT_FULL_VERSION} -DshortVersion=${PROJECT_VERSION} -Dminimum_macos_version=${CMAKE_OSX_DEPLOYMENT_TARGET} -Darch=${arch} -P ${PROJECT_SOURCE_DATA_DIR}/info-plist.cmake
 update-mime-database -V  "${RESOURCES}/share/mime"
 cp -RL "${LOCAL_PREFIX}/share/locale" "${RESOURCES}/share/locale"
 
