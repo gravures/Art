@@ -325,10 +325,12 @@ if [[ -n $UNIVERSAL_URL ]]; then
     if [[ $arch = "arm64" ]]; then
         cp -R ART.app ART-arm64.app
         cp -R ARTuniv/ART.app ART-x86_64.app
+        echo "\n\n=====================================\n\n" >> RawTherapee.app/Contents/Resources/AboutThisBuild.txt
         cat ART-x86_64.app/Contents/Resources/AboutThisBuild.txt >> ART.app/Contents/Resources/AboutThisBuild.txt
     else
         cp -R ART.app ART-x86_64.app
         cp -R ARTuniv/ART.app ART-arm64.app
+        echo "\n\n=====================================\n\n" >> RawTherapee.app/Contents/Resources/AboutThisBuild.txt
         cat ART-arm64.app/Contents/Resources/AboutThisBuild.txt >> ART.app/Contents/Resources/AboutThisBuild.txt
     fi
     hdiutil unmount ./ARTuniv
