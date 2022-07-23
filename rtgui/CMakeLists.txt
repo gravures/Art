@@ -270,8 +270,8 @@ target_compile_definitions(art-cli PUBLIC CLIVERSION)
 if((WIN32) AND NOT(UPPER_CMAKE_BUILD_TYPE STREQUAL "DEBUG"))
     set_target_properties(art PROPERTIES LINK_FLAGS "-mwindows")
 endif()
-set_target_properties(art PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS}" OUTPUT_NAME art)
-set_target_properties(art-cli PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS}" OUTPUT_NAME art-cli)
+set_target_properties(art PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS}" OUTPUT_NAME ART)
+set_target_properties(art-cli PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS}" OUTPUT_NAME ART-cli)
 
 # Add linked libraries dependencies to executables targets
 target_link_libraries(art PUBLIC
