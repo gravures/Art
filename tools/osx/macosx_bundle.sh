@@ -326,7 +326,7 @@ if [[ -n $UNIVERSAL_URL ]]; then
         cp -R ART.app ART-arm64.app
         minimum_arm64_version=$(f=$(cat ART-arm64.app/Contents/Resources/AboutThisBuild.txt | grep mmacosx-version); echo "${f#*min=}" | cut -d ' ' -f1)
         cp -R ARTuniv/ART.app ART-x86_64.app
-        minimum_x86_64_version=$(cat AboutThisBuild.txt | grep mmacosx-version); echo "${f#*min=}" | cut -d ' ' -f1
+        minimum_x86_64_version=$(cat ART-x86_64.app/Contents/Resources/AboutThisBuild.txt | grep mmacosx-version); echo "${f#*min=}" | cut -d ' ' -f1
         echo "\n\n=====================================\n\n" >> ART.app/Contents/Resources/AboutThisBuild.txt
         cat ART-x86_64.app/Contents/Resources/AboutThisBuild.txt >> ART.app/Contents/Resources/AboutThisBuild.txt
     else
