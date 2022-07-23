@@ -35,7 +35,7 @@ function CheckLink {
 }
 
 function ModifyInstallNames {
-    find -E "${CONTENTS}" -type f -regex '.*/(art-cli|art|.*\.(dylib|so))' | while read -r x; do
+    find -E "${CONTENTS}" -type f -regex '.*/(${PROJECT_NAME}-cli|${PROJECT_NAME}|.*\.(dylib|so))' | while read -r x; do
         msg "Modifying install names: ${x}"
         {
             # id
@@ -94,7 +94,7 @@ CMAKE_OSX_DEPLOYMENT_TARGET="$(cmake .. -L -N | grep CMAKE_OSX_DEPLOYMENT_TARGET
 #Out: x86_64
 CMAKE_OSX_ARCHITECTURES="$(cmake .. -L -N | grep CMAKE_OSX_ARCHITECTURES)"; CMAKE_OSX_ARCHITECTURES="${CMAKE_OSX_ARCHITECTURES#*=}"
 
-MINIMUM_SYSTEM_VERSION="$(otool -l "${CMAKE_BUILD_TYPE}"/MacOS/art | grep -A2 'LC_VERSION_MIN_MACOSX' | awk '$1 ~ /version/ { printf $2 }')"
+MINIMUM_SYSTEM_VERSION="$(otool -l "${CMAKE_BUILD_TYPE}"/MacOS/${PROJECT_NAME} | grep -A2 'LC_VERSION_MIN_MACOSX' | awk '$1 ~ /version/ { printf $2 }')"
 if [[ -z $MINIMUM_SYSTEM_VERSION ]]; then
     MINIMUM_SYSTEM_VERSION=${CMAKE_OSX_DEPLOYMENT_TARGET}
 fi
@@ -159,7 +159,7 @@ RESOURCES="${CONTENTS}/Resources"
 MACOS="${CONTENTS}/MacOS"
 LIB="${CONTENTS}/Frameworks"
 ETC="${RESOURCES}/etc"
-EXECUTABLE="${MACOS}/art"
+EXECUTABLE="${MACOS}/${PROJECT_NAME}"
 GDK_PREFIX="${LOCAL_PREFIX}/"
 
 msg "Removing old files:"
@@ -271,9 +271,9 @@ mkdir -p "${ETC}"/gtk-3.0
 echo $'[Settings]\ngtk-primary-button-warps-slider = true\ngtk-overlay-scrolling = true' > "${RESOURCES}/share/gtk-3.0/settings.ini"
 "${LOCAL_PREFIX}"/bin/gdk-pixbuf-query-loaders "${LIB}"/libpixbufloader-*.so > "${ETC}"/gtk-3.0/gdk-pixbuf.loaders
 "${LOCAL_PREFIX}"/bin/gtk-query-immodules-3.0 "${LIB}"/im-* > "${ETC}"/gtk-3.0/gtk.immodules || "${LOCAL_PREFIX}"/bin/gtk-query-immodules "${LIB}"/im-* > "${ETC}"/gtk-3.0/gtk.immodules
-sed -i.bak -e "s|${PWD}/ART.app/Contents/|/Applications/ART.app/Contents/|" "${ETC}"/gtk-3.0/gdk-pixbuf.loaders "${ETC}/gtk-3.0/gtk.immodules"
-sed -i.bak -e "s|${LOCAL_PREFIX}/share/|/Applications/ART.app/Contents/Resources/share/|" "${ETC}"/gtk-3.0/gtk.immodules
-sed -i.bak -e "s|${LOCAL_PREFIX}/|/Applications/ART.app/Contents/Frameworks/|" "${ETC}"/gtk-3.0/gtk.immodules
+sed -i.bak -e "s|${PWD}/${PROJECT_NAME}.app/Contents/|/Applications/${PROJECT_NAME}.app/Contents/|" "${ETC}"/gtk-3.0/gdk-pixbuf.loaders "${ETC}/gtk-3.0/gtk.immodules"
+sed -i.bak -e "s|${LOCAL_PREFIX}/share/|/Applications/${PROJECT_NAME}.app/Contents/Resources/share/|" "${ETC}"/gtk-3.0/gtk.immodules
+sed -i.bak -e "s|${LOCAL_PREFIX}/|/Applications/${PROJECT_NAME}.app/Contents/Frameworks/|" "${ETC}"/gtk-3.0/gtk.immodules
 rm "${ETC}"/*/*.bak
 
 # Install names
@@ -311,7 +311,8 @@ for frameworklibs in "${LIB}"/*{dylib,so,cli}; do
     install_name_tool -delete_rpath ${LOCAL_PREFIX}/lib "${frameworklibs}" 2>/dev/null
     install_name_tool -add_rpath /Applications/"${LIB}" "${frameworklibs}" 2>/dev/null
 done
-install_name_tool -delete_rpath ART.app/Contents/Frameworks "${EXECUTABLE}"-cli 2>/dev/null
+for dylib in ./${PROJECT_NAME}.app/Contents/Frameworks/*.dylib ; do if [[ $dylib ]]; then sudo install_name_tool -change $(otool -L ${PROJECT_NAME}.app/Contents/MacOS/${PROJECT_NAME} | grep $(basename $dylib) | cut -f2  | cut -d ' ' -f1 ) /Applications/${PROJECT_NAME}.app/Contents/Frameworks/$(basename $dylib) ${PROJECT_NAME}.app/Contents/MacOS/${PROJECT_NAME} ; fi ; done
+install_name_tool -delete_rpath ${PROJECT_NAME}.app/Contents/Frameworks "${EXECUTABLE}"-cli 2>/dev/null
 install_name_tool -add_rpath /Applications/"${LIB}" "${EXECUTABLE}"-cli 2>/dev/null
 ditto "${EXECUTABLE}"-cli "${APP}"/..
 
@@ -321,37 +322,37 @@ if [[ -n $UNIVERSAL_URL ]]; then
     curl -L ${UNIVERSAL_URL} -o univ.zip
     msg "Extracting app."
     unzip univ.zip -d univapp
-    hdiutil attach -mountpoint ./ARTuniv univapp/*/*dmg
+    hdiutil attach -mountpoint ./${PROJECT_NAME}univ univapp/*/*dmg
     if [[ $arch = "arm64" ]]; then
-        cp -R ART.app ART-arm64.app
-        minimum_arm64_version=$(f=$(cat ART-arm64.app/Contents/Resources/AboutThisBuild.txt | grep mmacosx-version); echo "${f#*min=}" | cut -d ' ' -f1)
-        cp -R ARTuniv/ART.app ART-x86_64.app
-        minimum_x86_64_version=$(cat ART-x86_64.app/Contents/Resources/AboutThisBuild.txt | grep mmacosx-version); echo "${f#*min=}" | cut -d ' ' -f1
-        echo "\n\n=====================================\n\n" >> ART.app/Contents/Resources/AboutThisBuild.txt
-        cat ART-x86_64.app/Contents/Resources/AboutThisBuild.txt >> ART.app/Contents/Resources/AboutThisBuild.txt
+        cp -R ${PROJECT_NAME}.app ${PROJECT_NAME}-arm64.app
+        minimum_arm64_version=$(f=$(cat ${PROJECT_NAME}-arm64.app/Contents/Resources/AboutThisBuild.txt | grep mmacosx-version); echo "${f#*min=}" | cut -d ' ' -f1)
+        cp -R ${PROJECT_NAME}univ/${PROJECT_NAME}.app ${PROJECT_NAME}-x86_64.app
+        minimum_x86_64_version=$(cat ${PROJECT_NAME}-x86_64.app/Contents/Resources/AboutThisBuild.txt | grep mmacosx-version); echo "${f#*min=}" | cut -d ' ' -f1
+        echo "\n\n=====================================\n\n" >> ${PROJECT_NAME}.app/Contents/Resources/AboutThisBuild.txt
+        cat ${PROJECT_NAME}-x86_64.app/Contents/Resources/AboutThisBuild.txt >> ${PROJECT_NAME}.app/Contents/Resources/AboutThisBuild.txt
     else
-        cp -R ART.app ART-x86_64.app
-        minimum_x86_64_version=$(f=$(cat ART-x86_64.app/Contents/Resources/AboutThisBuild.txt | grep mmacosx-version); echo "${f#*min=}" | cut -d ' ' -f1)
-        cp -R ARTuniv/ART.app ART-arm64.app
-        minimum_arm64_version=$(f=$(cat ART-arm64.app/Contents/Resources/AboutThisBuild.txt | grep mmacosx-version); echo "${f#*min=}" | cut -d ' ' -f1)
-        echo "\n\n=====================================\n\n" >> ART.app/Contents/Resources/AboutThisBuild.txt
-        cat ART-arm64.app/Contents/Resources/AboutThisBuild.txt >> ART.app/Contents/Resources/AboutThisBuild.txt
+        cp -R ${PROJECT_NAME}.app ${PROJECT_NAME}-x86_64.app
+        minimum_x86_64_version=$(f=$(cat ${PROJECT_NAME}-x86_64.app/Contents/Resources/AboutThisBuild.txt | grep mmacosx-version); echo "${f#*min=}" | cut -d ' ' -f1)
+        cp -R ${PROJECT_NAME}univ/${PROJECT_NAME}.app ${PROJECT_NAME}-arm64.app
+        minimum_arm64_version=$(f=$(cat ${PROJECT_NAME}-arm64.app/Contents/Resources/AboutThisBuild.txt | grep mmacosx-version); echo "${f#*min=}" | cut -d ' ' -f1)
+        echo "\n\n=====================================\n\n" >> ${PROJECT_NAME}.app/Contents/Resources/AboutThisBuild.txt
+        cat ${PROJECT_NAME}-arm64.app/Contents/Resources/AboutThisBuild.txt >> ${PROJECT_NAME}.app/Contents/Resources/AboutThisBuild.txt
     fi
     cmake -DPROJECT_SOURCE_DATA_DIR=${PROJECT_SOURCE_DATA_DIR} -DCONTENTS=${CONTENTS} -Dversion=${PROJECT_FULL_VERSION} -DshortVersion=${PROJECT_VERSION} -Dminimum_arm64_version=${minimum_arm64_version} -Dminimum_x86_64_version=${minimum_x86_64_version} -Darch=${arch} -P ${PROJECT_SOURCE_DATA_DIR}/info-plist.cmake
-    hdiutil unmount ./ARTuniv
+    hdiutil unmount ./${PROJECT_NAME}univ
     rm -r univapp
     # Create the fat main ART binary and move it into the new bundle
-    lipo -create -output ART ART-arm64.app/Contents/MacOS/art ART-x86_64.app/Contents/MacOS/art
-    mv art ART.app/Contents/MacOS
+    lipo -create -output ${PROJECT_NAME} ${PROJECT_NAME}-arm64.app/Contents/MacOS/${PROJECT_NAME} ${PROJECT_NAME}-x86_64.app/Contents/MacOS/${PROJECT_NAME}
+    mv ${PROJECT_NAME} ${PROJECT_NAME}.app/Contents/MacOS
     # Create all the fat dependencies and move them into the bundle
-    for lib in ART-arm64.app/Contents/Frameworks/* ; do
-        lipo -create -output $(basename $lib) ART-arm64.app/Contents/Frameworks/$(basename $lib) ART-x86_64.app/Contents/Frameworks/$(basename $lib)
+    for lib in ${PROJECT_NAME}-arm64.app/Contents/Frameworks/* ; do
+        lipo -create -output $(basename $lib) ${PROJECT_NAME}-arm64.app/Contents/Frameworks/$(basename $lib) ${PROJECT_NAME}-x86_64.app/Contents/Frameworks/$(basename $lib)
     done
-    sudo mv *cli *so *dylib ART.app/Contents/Frameworks
-    rm -r ART-arm64.app
-    rm -r ART-x86_64.app
+    sudo mv *cli *so *dylib ${PROJECT_NAME}.app/Contents/Frameworks
+    rm -r ${PROJECT_NAME}-arm64.app
+    rm -r ${PROJECT_NAME}-x86_64.app
 else
-    minimum_arm64_version=$(f=$(cat ART.app/Contents/Resources/AboutThisBuild.txt | grep mmacosx-version); echo "${f#*min=}" | cut -d ' ' -f1)
+    minimum_arm64_version=$(f=$(cat ${PROJECT_NAME}.app/Contents/Resources/AboutThisBuild.txt | grep mmacosx-version); echo "${f#*min=}" | cut -d ' ' -f1)
     minimum_x86_64_version=${minimum_arm64_version}
     cmake -DPROJECT_SOURCE_DATA_DIR=${PROJECT_SOURCE_DATA_DIR} -DCONTENTS=${CONTENTS} -Dversion=${PROJECT_FULL_VERSION} -DshortVersion=${PROJECT_VERSION} -Dminimum_arm64_version=${minimum_arm64_version} -Dminimum_x86_64_version=${minimum_x86_64_version} -Darch=${arch} -P ${PROJECT_SOURCE_DATA_DIR}/info-plist.cmake
 fi
@@ -484,7 +485,7 @@ function CreateDmg {
     # Zip disk image for redistribution
     msg "Zipping disk image for redistribution:"
     mkdir "${PROJECT_NAME}_macOS_${MINIMUM_SYSTEM_VERSION}_${arch}_${PROJECT_FULL_VERSION}_folder"
-        ditto {"${PROJECT_NAME}_macOS_${MINIMUM_SYSTEM_VERSION}_${arch}_${PROJECT_FULL_VERSION}.dmg","art-cli","${PROJECT_SOURCE_DATA_DIR}/INSTALL.txt"} "${PROJECT_NAME}_macOS_${MINIMUM_SYSTEM_VERSION}_${arch}_${PROJECT_FULL_VERSION}_folder"
+        ditto {"${PROJECT_NAME}_macOS_${MINIMUM_SYSTEM_VERSION}_${arch}_${PROJECT_FULL_VERSION}.dmg","${PROJECT_NAME}-cli","${PROJECT_SOURCE_DATA_DIR}/INSTALL.txt"} "${PROJECT_NAME}_macOS_${MINIMUM_SYSTEM_VERSION}_${arch}_${PROJECT_FULL_VERSION}_folder"
     zip -r "${PROJECT_NAME}_macOS_${MINIMUM_SYSTEM_VERSION}_${arch}_${PROJECT_FULL_VERSION}.zip" "${PROJECT_NAME}_macOS_${MINIMUM_SYSTEM_VERSION}_${arch}_${PROJECT_FULL_VERSION}_folder/"
     if [[ -n $NIGHTLY ]]; then
         cp "${PROJECT_NAME}_macOS_${MINIMUM_SYSTEM_VERSION}_${arch}_${PROJECT_FULL_VERSION}.zip" "${PROJECT_NAME}_macOS_${arch}_latest.zip"
