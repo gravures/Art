@@ -290,7 +290,7 @@ ditto "${PROJECT_SOURCE_DIR}/rtdata/fonts" "${ETC}/fonts"
 # App bundle resources
 ditto "${PROJECT_SOURCE_DATA_DIR}/"{ART,profile}.icns "${RESOURCES}"
 #ditto "${PROJECT_SOURCE_DATA_DIR}/PkgInfo" "${CONTENTS}"
-cmake -DPROJECT_SOURCE_DATA_DIR=${PROJECT_SOURCE_DATA_DIR} -DCONTENTS=${CONTENTS} -Dversion=${PROJECT_FULL_VERSION} -DshortVersion=${PROJECT_VERSION} -Dminimum_macos_version=${CMAKE_OSX_DEPLOYMENT_TARGET} -Darch=${arch} -P ${PROJECT_SOURCE_DATA_DIR}/info-plist.cmake
+
 update-mime-database -V  "${RESOURCES}/share/mime"
 cp -RL "${LOCAL_PREFIX}/share/locale" "${RESOURCES}/share/locale"
 
@@ -324,15 +324,20 @@ if [[ -n $UNIVERSAL_URL ]]; then
     hdiutil attach -mountpoint ./ARTuniv univapp/*/*dmg
     if [[ $arch = "arm64" ]]; then
         cp -R ART.app ART-arm64.app
+        minimum_arm64_version=$(f=$(cat ART-arm64.app/Contents/Resources/AboutThisBuild.txt | grep mmacosx-version); echo "${f#*min=}" | cut -d ' ' -f1)
         cp -R ARTuniv/ART.app ART-x86_64.app
-        echo "\n\n=====================================\n\n" >> RawTherapee.app/Contents/Resources/AboutThisBuild.txt
+        minimum_x86_64_version=$(cat AboutThisBuild.txt | grep mmacosx-version); echo "${f#*min=}" | cut -d ' ' -f1
+        echo "\n\n=====================================\n\n" >> ART.app/Contents/Resources/AboutThisBuild.txt
         cat ART-x86_64.app/Contents/Resources/AboutThisBuild.txt >> ART.app/Contents/Resources/AboutThisBuild.txt
     else
         cp -R ART.app ART-x86_64.app
+        minimum_x86_64_version=$(f=$(cat ART-x86_64.app/Contents/Resources/AboutThisBuild.txt | grep mmacosx-version); echo "${f#*min=}" | cut -d ' ' -f1)
         cp -R ARTuniv/ART.app ART-arm64.app
-        echo "\n\n=====================================\n\n" >> RawTherapee.app/Contents/Resources/AboutThisBuild.txt
+        minimum_arm64_version=$(f=$(cat ART-arm64.app/Contents/Resources/AboutThisBuild.txt | grep mmacosx-version); echo "${f#*min=}" | cut -d ' ' -f1)
+        echo "\n\n=====================================\n\n" >> ART.app/Contents/Resources/AboutThisBuild.txt
         cat ART-arm64.app/Contents/Resources/AboutThisBuild.txt >> ART.app/Contents/Resources/AboutThisBuild.txt
     fi
+    cmake -DPROJECT_SOURCE_DATA_DIR=${PROJECT_SOURCE_DATA_DIR} -DCONTENTS=${CONTENTS} -Dversion=${PROJECT_FULL_VERSION} -DshortVersion=${PROJECT_VERSION} -Dminimum_arm64_version=${minimum_arm64_version} -Dminimum_x86_64_version=${minimum_x86_64_version} -Darch=${arch} -P ${PROJECT_SOURCE_DATA_DIR}/info-plist.cmake
     hdiutil unmount ./ARTuniv
     rm -r univapp
     # Create the fat main ART binary and move it into the new bundle
@@ -345,6 +350,10 @@ if [[ -n $UNIVERSAL_URL ]]; then
     sudo mv *cli *so *dylib ART.app/Contents/Frameworks
     rm -r ART-arm64.app
     rm -r ART-x86_64.app
+else
+    minimum_arm64_version=$(f=$(cat ART.app/Contents/Resources/AboutThisBuild.txt | grep mmacosx-version); echo "${f#*min=}" | cut -d ' ' -f1)
+    minimum_x86_64_version=${minimum_arm64_version}
+    cmake -DPROJECT_SOURCE_DATA_DIR=${PROJECT_SOURCE_DATA_DIR} -DCONTENTS=${CONTENTS} -Dversion=${PROJECT_FULL_VERSION} -DshortVersion=${PROJECT_VERSION} -Dminimum_arm64_version=${minimum_arm64_version} -Dminimum_x86_64_version=${minimum_x86_64_version} -Darch=${arch} -P ${PROJECT_SOURCE_DATA_DIR}/info-plist.cmake
 fi
 
 # Codesign the app
