@@ -1981,7 +1981,8 @@ LogEncodingParams::LogEncodingParams():
     targetGray(18.0),
     blackEv(-13.5),
     whiteEv(2.5),
-    regularization(60)
+    regularization(60),
+    satcontrol(true)
 {
 }
 
@@ -1995,7 +1996,8 @@ bool LogEncodingParams::operator ==(const LogEncodingParams& other) const
         && blackEv == other.blackEv
         && whiteEv == other.whiteEv
         && targetGray == other.targetGray
-        && regularization == other.regularization;
+        && regularization == other.regularization
+        && satcontrol == other.satcontrol;
 }
 
 bool LogEncodingParams::operator !=(const LogEncodingParams& other) const
@@ -3644,6 +3646,7 @@ int ProcParams::save(ProgressListener *pl, bool save_general,
             saveToKeyfile("LogEncoding", "BlackEv", logenc.blackEv, keyFile);
             saveToKeyfile("LogEncoding", "WhiteEv", logenc.whiteEv, keyFile);
             saveToKeyfile("LogEncoding", "Regularization", logenc.regularization, keyFile);
+            saveToKeyfile("LogEncoding", "SaturationControl", logenc.satcontrol, keyFile);
         }
 
 // ToneEqualizer
@@ -4684,6 +4687,9 @@ int ProcParams::load(ProgressListener *pl, bool load_general,
             }
             if (ppVersion < 1025) {
                 toneCurve.contrast *= 2;
+            }
+            if (!assignFromKeyfile(keyFile, "LogEncoding", "SaturationControl", logenc.satcontrol) && ppVersion < 1037) {
+                logenc.satcontrol = false;
             }
         }
 
