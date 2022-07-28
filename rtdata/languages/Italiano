@@ -9,6 +9,7 @@
 #09 2022-05-18 alvaro
 #10 2022-06-12 alvaro
 #11 2022-07-14 v1.15 - alvaro
+#12 2022-07-25 alvaro
 # Translators please append a comment here with the current date and your name(s) as used in the RawTherapee/ART forum or Bitbucket page
 
 ABOUT_TAB_BUILD;Versione
@@ -604,6 +605,7 @@ HISTORY_MSG_LOGENC_BLACK_EV;Log - Ev nero
 HISTORY_MSG_LOGENC_ENABLED;Codifica Log
 HISTORY_MSG_LOGENC_GAIN;Log - Guadagno
 HISTORY_MSG_LOGENC_REGULARIZATION;Log - Regolarizzazione
+HISTORY_MSG_LOGENC_SATCONTROL;Log - Controllo saturazione
 HISTORY_MSG_LOGENC_TARGET_GRAY;Log - Grigio di riferimento
 HISTORY_MSG_LOGENC_WHITE_EV;Log - Ev bianco
 HISTORY_MSG_METADATA_MODE;Modalità copia metadati
