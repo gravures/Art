@@ -490,7 +490,7 @@ ColorCorrection::ColorCorrection(): FoldableToolPanel(this, "colorcorrection", M
 //    slope->setLogScale(32, 1, true);
     slope->setAdjusterListener(this);
     box_combined->pack_start(*slope);
-    offset = Gtk::manage(new Adjuster(M("TP_COLORCORRECTION_OFFSET"), -0.1, 0.1, 0.001, 0));
+    offset = Gtk::manage(new Adjuster(M("TP_COLORCORRECTION_OFFSET"), -0.1, 0.1, 0.0001, 0));
     offset->setAdjusterListener(this);
     box_combined->pack_start(*offset);
     power = Gtk::manage(new Adjuster(M("TP_COLORCORRECTION_POWER"), 0.1, 4.0, 0.001, 1));
@@ -544,7 +544,7 @@ ColorCorrection::ColorCorrection(): FoldableToolPanel(this, "colorcorrection", M
         //slope_rgb[c]->setLogScale(10, 1, true);
         slope_rgb[c]->setAdjusterListener(this);
         vb->pack_start(*slope_rgb[c]);
-        offset_rgb[c] = Gtk::manage(new Adjuster(M("TP_COLORCORRECTION_OFFSET"), -0.1, 0.1, 0.001, 0));
+        offset_rgb[c] = Gtk::manage(new Adjuster(M("TP_COLORCORRECTION_OFFSET"), -0.1, 0.1, 0.0001, 0));
         offset_rgb[c]->setAdjusterListener(this);
         vb->pack_start(*offset_rgb[c]);
         power_rgb[c] = Gtk::manage(new Adjuster(M("TP_COLORCORRECTION_POWER"), 0.1, 4.0, 0.001, 1));
@@ -587,7 +587,7 @@ ColorCorrection::ColorCorrection(): FoldableToolPanel(this, "colorcorrection", M
         vb->pack_start(*hb);
 
         if (c == 1) {
-            lfactor[c] = Gtk::manage(new Adjuster("", -10.0, 10.0, 0.01, 0, Gtk::manage(new RTImage("circle-black-small.png")), Gtk::manage(new RTImage("circle-white-small.png")), nullptr, nullptr, false, false));
+            lfactor[c] = Gtk::manage(new Adjuster("", -10.0, 10.0, 0.001, 0, Gtk::manage(new RTImage("circle-black-small.png")), Gtk::manage(new RTImage("circle-white-small.png")), nullptr, nullptr, false, false));
         } else {
             lfactor[c] = Gtk::manage(new Adjuster("", -50.0, 50.0, 0.1, 0, Gtk::manage(new RTImage("circle-black-small.png")), Gtk::manage(new RTImage("circle-white-small.png")), nullptr, nullptr, false, false));
         }
