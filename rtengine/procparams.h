@@ -218,7 +218,7 @@ struct DrawnMask {
         double x; // [0,1], with 0 as leftmost point of the image
         double y; // [0,1]
         double radius; // [0,1], with 1 as 10% of the image smallest dimension
-        double hardness; // [0,1] with 1 as opaque (strongest)
+        double opacity; // [0,1] with 1 as opaque (strongest)
         bool erase;
         Stroke();
         bool operator==(const Stroke &other) const;
@@ -226,7 +226,7 @@ struct DrawnMask {
     };
     bool enabled;
     double feather; // [0,100]    
-    double transparency; // [0,1] (0 = opaque, 1 = fully transparent)
+    double opacity; // [0,1] (1 = opaque, 0 = fully transparent)
     double smoothness; // [0,1] (0 = harsh edges, 1 = fully blurred)
     std::vector<double> contrast; // curve
     std::vector<Stroke> strokes;

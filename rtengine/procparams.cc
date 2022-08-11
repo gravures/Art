@@ -934,7 +934,7 @@ DrawnMask::Stroke::Stroke():
     x(-1),
     y(-1),
     radius(0),
-    hardness(1),
+    opacity(1),
     erase(false)
 {
 }
@@ -946,7 +946,7 @@ bool DrawnMask::Stroke::operator==(const Stroke &other) const
         && y == other.y
         && radius == other.radius
         && erase == other.erase
-        && hardness == other.hardness;
+        && opacity == other.opacity;
 }
 
 
@@ -959,7 +959,7 @@ bool DrawnMask::Stroke::operator!=(const Stroke &other) const
 DrawnMask::DrawnMask():
     enabled(false),
     feather(0.0),
-    transparency(0),
+    opacity(0),
     smoothness(0),
     contrast{DCT_Linear},
     strokes(),
@@ -972,7 +972,7 @@ bool DrawnMask::operator==(const DrawnMask &other) const
 {
     return enabled == other.enabled
         && feather == other.feather
-        && transparency == other.transparency
+        && opacity == other.opacity
         && smoothness == other.smoothness
         && contrast == other.contrast
         && strokes == other.strokes
@@ -1003,7 +1003,7 @@ void DrawnMask::strokes_to_list(std::vector<double> &out) const
         {
             return a.radius == b.radius
                 && a.erase == b.erase
-                && a.hardness == b.hardness;
+                && a.opacity == b.opacity;
         };
 
     auto cur = strokes[0];
@@ -1016,7 +1016,7 @@ void DrawnMask::strokes_to_list(std::vector<double> &out) const
         out.push_back(n);
         out.push_back(cur.radius);
         out.push_back(int(!cur.erase));
-        out.push_back(cur.hardness);
+        out.push_back(cur.opacity);
         for (int i = 0; i < n; ++i) {
             out.push_back(strokes[pos].x);
             out.push_back(strokes[pos].y);
@@ -1040,7 +1040,7 @@ void DrawnMask::strokes_from_list(const std::vector<double> &v)
         Stroke s;
         s.radius = v[pos++];
         s.erase = !bool(v[pos++]);
-        s.hardness = v[pos++];
+        s.opacity = v[pos++];
         for (int i = 0; i < n && pos + 1 < v.size(); ++i) {
             strokes.push_back(s);
             strokes.back().x = v[pos++];
@@ -1327,7 +1327,15 @@ bool Mask::load(int ppVersion, const KeyFile &keyfile, const Glib::ustring &grou
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "DeltaEMaskWeightH" + suffix, deltaEMask.weight_H);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskEnabled" + suffix, drawnMask.enabled);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskFeather" + suffix, drawnMask.feather);
-    ret |= assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskTransparency" + suffix, drawnMask.transparency);
+    if (ppVersion < 1038) {
+        double transparency = 0;
+        if (assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskTransparency" + suffix, transparency)) {
+            ret = true;
+            drawnMask.opacity = 1.0 - LIM01(transparency);
+        }
+    } else {
+        ret |= assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskOpacity" + suffix, drawnMask.opacity);
+    }
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskSmoothness" + suffix, drawnMask.smoothness);
     ret |= assignFromKeyfile(keyfile, group_name, prefix + "DrawnMaskContrast" + suffix, drawnMask.contrast);
     if (ppVersion < 1019) {
@@ -1364,7 +1372,7 @@ bool Mask::load(int ppVersion, const KeyFile &keyfile, const Glib::ustring &grou
                     auto &p = drawnMask.strokes.back();
                     auto &s = stmp[i];
                     if (p.radius != s.radius && p.radius > 0 && s.radius > 0 &&
-                        p.hardness == s.hardness && p.erase == s.erase) {
+                        p.opacity == s.opacity && p.erase == s.erase) {
                         drawnMask.strokes.push_back(DrawnMask::Stroke());
                     }
                     drawnMask.strokes.push_back(s);
@@ -1452,7 +1460,7 @@ void Mask::save(KeyFile &keyfile, const Glib::ustring &group_name, const Glib::u
     putToKeyfile(group_name, prefix + "DeltaEMaskWeightH" + suffix, deltaEMask.weight_H, keyfile);
     putToKeyfile(group_name, prefix + "DrawnMaskEnabled" + suffix, drawnMask.enabled, keyfile);
     putToKeyfile(group_name, prefix + "DrawnMaskFeather" + suffix, drawnMask.feather, keyfile);
-    putToKeyfile(group_name, prefix + "DrawnMaskTransparency" + suffix, drawnMask.transparency, keyfile);
+    putToKeyfile(group_name, prefix + "DrawnMaskOpacity" + suffix, drawnMask.opacity, keyfile);
     putToKeyfile(group_name, prefix + "DrawnMaskSmoothness" + suffix, drawnMask.smoothness, keyfile);
     putToKeyfile(group_name, prefix + "DrawnMaskContrast" + suffix, drawnMask.contrast, keyfile);
     putToKeyfile(group_name, prefix + "DrawnMaskMode" + suffix, int(drawnMask.mode), keyfile);
