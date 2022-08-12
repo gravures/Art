@@ -959,7 +959,7 @@ bool DrawnMask::Stroke::operator!=(const Stroke &other) const
 DrawnMask::DrawnMask():
     enabled(false),
     feather(0.0),
-    opacity(0),
+    opacity(1),
     smoothness(0),
     contrast{DCT_Linear},
     strokes(),
