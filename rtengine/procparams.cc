@@ -1532,8 +1532,7 @@ ToneCurveParams::ToneCurveParams():
     histmatching(false),
     fromHistMatching(false),
     saturation{ FCT_Linear },
-    saturation_hmask{ FCT_Linear },
-    saturation_cmask{ FCT_Linear },
+    saturation2{ DCT_Linear },
     perceptualStrength(100),
     contrastLegacyMode(false),
     whitePoint(1.0)    
@@ -1552,8 +1551,7 @@ bool ToneCurveParams::operator ==(const ToneCurveParams& other) const
         && histmatching == other.histmatching
         && fromHistMatching == other.fromHistMatching
         && saturation == other.saturation
-        && saturation_hmask == other.saturation_hmask
-        && saturation_cmask == other.saturation_cmask
+        && saturation2 == other.saturation2
         && perceptualStrength == other.perceptualStrength
         && contrastLegacyMode == other.contrastLegacyMode
         && whitePoint == other.whitePoint;
@@ -3443,8 +3441,7 @@ int ProcParams::save(ProgressListener *pl, bool save_general,
             saveToKeyfile("ToneCurve", "Curve", toneCurve.curve, keyFile);
             saveToKeyfile("ToneCurve", "Curve2", toneCurve.curve2, keyFile);
             saveToKeyfile("ToneCurve", "Saturation", toneCurve.saturation, keyFile);
-            saveToKeyfile("ToneCurve", "SaturationHMask", toneCurve.saturation_hmask, keyFile);
-            saveToKeyfile("ToneCurve", "SaturationCMask", toneCurve.saturation_cmask, keyFile);
+            saveToKeyfile("ToneCurve", "Saturation2", toneCurve.saturation2, keyFile);
             if (toneCurve.perceptualStrength != 100) {
                 saveToKeyfile("ToneCurve", "PerceptualStrength", toneCurve.perceptualStrength, keyFile);
             }
@@ -4330,8 +4327,7 @@ int ProcParams::load(ProgressListener *pl, bool load_general,
                 assignFromKeyfile(keyFile, "ToneCurve", "HistogramMatching", toneCurve.histmatching);
                 assignFromKeyfile(keyFile, "ToneCurve", "CurveFromHistogramMatching", toneCurve.fromHistMatching);
                 assignFromKeyfile(keyFile, "ToneCurve", "Saturation", toneCurve.saturation);
-                assignFromKeyfile(keyFile, "ToneCurve", "SaturationHMask", toneCurve.saturation_hmask);
-                assignFromKeyfile(keyFile, "ToneCurve", "SaturationCMask", toneCurve.saturation_cmask);
+                assignFromKeyfile(keyFile, "ToneCurve", "Saturation2", toneCurve.saturation2);
                 if (!assignFromKeyfile(keyFile, "ToneCurve", "PerceptualStrength", toneCurve.perceptualStrength) && ppVersion >= 1026) {
                     toneCurve.perceptualStrength = 100;
                 }

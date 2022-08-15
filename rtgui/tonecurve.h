@@ -48,8 +48,7 @@ protected:
     DiagonalCurveEditor* shape2;
     CurveEditorGroup *satcurveG;
     FlatCurveEditor *satcurve;
-    FlatCurveEditor *satcurve_h_;
-    FlatCurveEditor *satcurve_c_;
+    DiagonalCurveEditor *satcurve2_;
     Adjuster *perceptualStrength;
     Adjuster *whitePoint;
 

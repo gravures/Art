@@ -221,7 +221,7 @@ private:
 };
 
 
-void apply_satcurve(Imagefloat *rgb, const FlatCurve &curve, const FlatCurve &hmask, const FlatCurve &cmask, const Glib::ustring &working_profile, float whitept, bool multithread)
+void apply_satcurve(Imagefloat *rgb, const FlatCurve &curve, const DiagonalCurve &curve2, const Glib::ustring &working_profile, float whitept, bool multithread)
 {
     LUTf sat;
     const bool use_lut = (whitept == 1.f);
@@ -229,28 +229,10 @@ void apply_satcurve(Imagefloat *rgb, const FlatCurve &curve, const FlatCurve &hm
         satcurve_lut(curve, sat, whitept);
     }
 
-    const float pi2 = 2.f * RT_PI_F;
-
-    const auto hue01 =
-        [=](float h) -> float
-        {
-            float v = h / pi2;
-            if (v < 0.f) {
-                return 1.f + v;
-            } else if (v > 1.f) {
-                return v - 1.f;
-            } else {
-                return v;
-            }
-        };   
-
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(working_profile);
     TMatrix iws = ICCStore::getInstance()->workingSpaceInverseMatrix(working_profile);
 
     SatCurveRemap remap(whitept);
-
-    const bool use_hmask = !hmask.isIdentity();
-    const bool use_cmask = !cmask.isIdentity();
 
 #ifdef _OPENMP
 #   pragma omp parallel for if (multithread)
@@ -266,13 +248,8 @@ void apply_satcurve(Imagefloat *rgb, const FlatCurve &curve, const FlatCurve &hm
             Color::rgbxyz(R/65535.f, G/65535.f, B/65535.f, X, Y, Z, ws);
             Color::xyz2jzazbz(X, Y, Z, Jz, az, bz);
             Color::jzazbz2jzch(az, bz, cz, hz);
+            cz = curve2.getVal(cz);
             float s = use_lut ? sat[Y * 65535.f] : curve.getVal(remap(Y)) * 2.f;
-            if (use_hmask) {
-                s = intp(float(hmask.getVal(hue01(hz))), s, 1.f);
-            }
-            if (use_cmask) {
-                s = intp(float(cmask.getVal(cz * 50)), s, 1.f);
-            }
             cz *= s;
             Color::jzczhz2rgb(Jz, cz, hz, R, G, B, iws);
             R *= 65535.f;
@@ -542,11 +519,10 @@ void ImProcFunctions::toneCurve(Imagefloat *img)
         }
 
         auto satcurve_pts = params->toneCurve.saturation;
-        const FlatCurve satcurve(satcurve_pts, false, CURVES_MIN_POLY_POINTS / max(int(scale), 1));
-        if (!satcurve.isIdentity()) {
-            const FlatCurve satcurve_hmask(params->toneCurve.saturation_hmask, true, CURVES_MIN_POLY_POINTS / max(int(scale), 1));
-            const FlatCurve satcurve_cmask(params->toneCurve.saturation_cmask, false, CURVES_MIN_POLY_POINTS / max(int(scale), 1));
-            apply_satcurve(img, satcurve, satcurve_hmask, satcurve_cmask, params->icm.workingProfile, whitept, multiThread);
+        const FlatCurve satlcurve(satcurve_pts, false, CURVES_MIN_POLY_POINTS / max(int(scale), 1));
+        const DiagonalCurve satccurve(params->toneCurve.saturation2);
+        if (!satlcurve.isIdentity() || !satccurve.isIdentity()) {
+            apply_satcurve(img, satlcurve, satccurve, params->icm.workingProfile, whitept, multiThread);
         }
     } else if (editImgFloat) {
         const int W = img->getWidth();
