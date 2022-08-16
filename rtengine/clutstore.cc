@@ -7,9 +7,9 @@
 #include "opthelper.h"
 #include "rt_math.h"
 #include "stdimagesource.h"
+#include "linalgebra.h"
 
 #include "../rtgui/options.h"
-
 
 namespace rtengine {
 namespace {
@@ -308,6 +308,7 @@ rtengine::CLUTStore& rtengine::CLUTStore::getInstance()
 
 std::shared_ptr<rtengine::HaldCLUT> rtengine::CLUTStore::getClut(const Glib::ustring& filename) const
 {
+    MyMutex::MyLock lock(mutex_);
     std::shared_ptr<rtengine::HaldCLUT> result;
 
     const Glib::ustring full_filename =
@@ -327,13 +328,100 @@ std::shared_ptr<rtengine::HaldCLUT> rtengine::CLUTStore::getClut(const Glib::ust
     return result;
 }
 
+
+#ifdef ART_USE_OCIO
+
+namespace {
+
+std::string decompress_to_temp(const Glib::ustring &fname)
+{
+    std::string templ = Glib::build_filename(Glib::get_tmp_dir(), Glib::ustring::compose("ART-ocio-clf-%1-XXXXXX", Glib::path_get_basename(fname)));
+    int fd = Glib::mkstemp(templ);
+    if (fd < 0) {
+        throw "error";
+    }
+    close(fd);
+
+    auto f = Gio::File::create_for_path(templ);
+    auto s = f->append_to();
+    auto c = Gio::ZlibDecompressor::create(Gio::ZLIB_COMPRESSOR_FORMAT_GZIP);
+    {
+        auto stream = Gio::ConverterOutputStream::create(s, c);
+        stream->set_close_base_stream(true);
+        constexpr gsize chunk = 512;
+        char buffer[chunk];
+        auto src_fname = Glib::filename_from_utf8(fname);
+        FILE *src = g_fopen(src_fname.c_str(), "rb");
+        if (!src) {
+            throw "error";
+        }
+        size_t n = 0;
+        while ((n = fread(buffer, 1, chunk, src)) > 0) {
+            stream->write(buffer, n);
+        }
+        fclose(src);
+    }
+    
+    return templ;
+}
+
+} // namespace
+
+OCIO::ConstProcessorRcPtr rtengine::CLUTStore::getOCIOLut(const Glib::ustring& filename) const
+{
+    MyMutex::MyLock lock(mutex_);
+    
+    OCIO::ConstProcessorRcPtr result;
+
+    const Glib::ustring full_filename =
+        !Glib::path_is_absolute(filename)
+            ? Glib::ustring(Glib::build_filename(options.clutsDir, filename))
+            : filename;
+
+    if (!ocio_cache_.get(full_filename, result)) {
+        try {
+            OCIO::ConstConfigRcPtr config = OCIO::Config::CreateRaw();
+            OCIO::FileTransformRcPtr t = OCIO::FileTransform::Create();
+            std::string fn;
+            bool del_fn = false;
+            if (getFileExtension(full_filename) == "clfz") {
+                fn = decompress_to_temp(full_filename);
+                del_fn = true;
+            } else {
+                fn = Glib::filename_from_utf8(full_filename);
+            }
+            t->setSrc(fn.c_str());
+            t->setInterpolation(OCIO::INTERP_BEST);
+            result = config->getProcessor(t);
+            ocio_cache_.insert(full_filename, result);
+            if (del_fn) {
+                g_remove(fn.c_str());
+            }
+        } catch (...) {
+        }
+    }
+
+    return result;
+}
+
+#endif // ART_USE_OCIO
+
+
 void rtengine::CLUTStore::clearCache()
 {
+    MyMutex::MyLock lock(mutex_);
+    
     cache.clear();
+#ifdef ART_USE_OCIO
+    ocio_cache_.clear();
+#endif // ART_USE_OCIO
 }
 
 rtengine::CLUTStore::CLUTStore() :
     cache(options.clutCacheSize)
+#ifdef ART_USE_OCIO
+    , ocio_cache_(options.clutCacheSize)
+#endif
 {
 }
 
@@ -357,7 +445,10 @@ void HaldCLUTApplication::init(float strength, int tile_size)
 {
     hald_clut_ = CLUTStore::getInstance().getClut(clut_filename_);
     if (!hald_clut_) {
-        ok_ = false;
+#ifdef ART_USE_OCIO
+        if (!OCIO_init(strength, tile_size))
+#endif // ART_USE_OCIO
+            ok_ = false;
         return;
     }
 
@@ -389,11 +480,58 @@ void HaldCLUTApplication::init(float strength, int tile_size)
 }
 
 
+#ifdef ART_USE_OCIO
+
+bool HaldCLUTApplication::OCIO_init(float strength, int tile_size)
+{
+    auto proc = CLUTStore::getInstance().getOCIOLut(clut_filename_);
+    if (!proc) {
+        ok_ = false;
+        return false;
+    }
+
+    try {
+        strength_ = strength;
+        TS_ = tile_size;
+        ok_ = true;
+
+        ocio_processor_ = proc->getOptimizedCPUProcessor(OCIO::BIT_DEPTH_F32, 
+                                                         OCIO::BIT_DEPTH_F32,
+                                                         OCIO::OPTIMIZATION_DEFAULT);
+        wprof_ = ICCStore::getInstance()->workingSpaceMatrix(working_profile_);
+        wiprof_ = ICCStore::getInstance()->workingSpaceInverseMatrix(working_profile_);
+        auto ws = dot_product(ACESp0_xyz, wprof_);
+        auto iws = dot_product(wiprof_, xyz_ACESp0);
+
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                conv_[i][j] = ws[i][j];
+                iconv_[i][j] = iws[i][j];
+            }
+        }
+        
+        return true;
+    } catch (...) {
+        ok_ = false;
+        return false;
+    }
+}
+#endif // ART_USE_OCIO
+
+
+
 void HaldCLUTApplication::operator()(float *r, float *g, float *b, int istart, int jstart, int tW, int tH)
 {
     if (!ok_) {
         return;
     }
+
+#ifdef ART_USE_OCIO
+    if (ocio_processor_) {
+        OCIO_apply(r, g, b, istart, jstart, tW, tH);
+        return;
+    }
+#endif // ART_USE_OCIO
 
     float out_rgbx[4 * TS_] ALIGNED16; // Line buffer for CLUT
     float clutr[TS_] ALIGNED16;
@@ -507,5 +645,30 @@ void HaldCLUTApplication::operator()(float *r, float *g, float *b, int istart, i
         }
     }
 }
+
+#ifdef ART_USE_OCIO
+
+void HaldCLUTApplication::OCIO_apply(float *r, float *g, float *b, int istart, int jstart, int tW, int tH)
+{
+    Vec3<float> data;
+    for (int i = istart, ti = 0; i < tH; ++i, ++ti) {
+        for (int j = jstart, tj = 0; j < tW; ++j, ++tj) {
+            data[0] = r[ti * TS_ + tj] / 65535.f;
+            data[1] = g[ti * TS_ + tj] / 65535.f;
+            data[2] = b[ti * TS_ + tj] / 65535.f;
+            data = dot_product(conv_, data);
+
+            OCIO::PackedImageDesc img(data, 1, 1, 3);
+            ocio_processor_->apply(img);
+            
+            data = dot_product(iconv_, data);
+            r[ti * TS_ + tj] = data[0] * 65535.f;
+            g[ti * TS_ + tj] = data[1] * 65535.f;
+            b[ti * TS_ + tj] = data[2] * 65535.f;
+        }
+    }
+}
+
+#endif // ART_USE_OCIO
 
 } // namespace rtengine

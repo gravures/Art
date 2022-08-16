@@ -144,10 +144,9 @@ option(WITH_SAN "Build with run-time sanitizer" OFF)
 option(WITH_PROF "Build with profiling instrumentation" OFF)
 option(WITH_SYSTEM_KLT "Build using system KLT library." OFF)
 option(OPTION_OMP "Build with OpenMP support" ON)
-
 option(ENABLE_MIMALLOC "Use the mimalloc library if available" OFF)
-
 option(ENABLE_LIBRAW "Use libraw for decoding" OFF)
+option(ENABLE_OCIO "Use OpenColorIOv2 for LUT application" OFF)
 
 # Set installation directories:
 if(WIN32 OR APPLE)
@@ -591,6 +590,16 @@ if(ENABLE_LIBRAW)
     endif()
 endif()
 
+if(ENABLE_OCIO)
+    pkg_check_modules(OCIO OpenColorIO>=2.0.0)
+    if(OCIO_FOUND)
+        message(STATUS "using OpenColorIO library ${OCIO_VERSION}")
+        add_definitions(-DART_USE_OCIO)
+    else()
+        message(STATUS "libraw not found")
+    endif()
+endif()
+
 
 # Find out whether we are building out of source:
 get_filename_component(ABS_SOURCE_DIR "${PROJECT_SOURCE_DIR}" ABSOLUTE)
@@ -695,6 +704,14 @@ if(ENABLE_LIBRAW AND LIBRAW_FOUND)
 else()
     list(APPEND ABOUT_COMMAND_WITH_ARGS
         -DART_LIBRAW_VERSION_INFO:STRING="N/A")
+endif()
+
+if(ENABLE_OCIO AND OCIO_FOUND)
+    list(APPEND ABOUT_COMMAND_WITH_ARGS
+        -DART_OCIO_VERSION_INFO:STRING="V${OCIO_VERSION}")
+else()
+    list(APPEND ABOUT_COMMAND_WITH_ARGS
+        -DART_OCIO_VERSION_INFO:STRING="N/A")
 endif()
 
 list(APPEND ABOUT_COMMAND_WITH_ARGS "-DBUILDINFO_OS:STRING=${CMAKE_HOST_SYSTEM_NAME}" -P "${PROJECT_SOURCE_DIR}/UpdateInfo.cmake")

@@ -252,6 +252,10 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/config.h.in" "${CMAKE_CURRENT_BINARY
 if(LIBRAW_FOUND)
     link_directories(${LIBRAW_LIBRARY_DIRS})
 endif()
+if(OCIO_FOUND)
+    include_directories(${OCIO_INCLUDE_DIRS})
+    link_directories(${OCIO_LIBRARY_DIRS})
+endif()
 
 # Create new executables targets
 add_executable(art ${EXTRA_SRC_NONCLI} ${NONCLISOURCEFILES})

@@ -1,3 +1,5 @@
+// -*- C++ -*-
+
 #pragma once
 
 #include <memory>
@@ -10,12 +12,15 @@
 #include "noncopyable.h"
 #include "iccstore.h"
 
-namespace rtengine
-{
+#ifdef ART_USE_OCIO
+#  include <OpenColorIO/OpenColorIO.h>
+namespace OCIO = OCIO_NAMESPACE;
+#endif // ART_USE_OCIO
 
-class HaldCLUT final :
-    public NonCopyable
-{
+
+namespace rtengine {
+
+class HaldCLUT final: public NonCopyable {
 public:
     HaldCLUT();
     ~HaldCLUT();
@@ -53,13 +58,14 @@ private:
 };
 
 
-class CLUTStore final :
-    public NonCopyable
-{
+class CLUTStore final: public NonCopyable {
 public:
     static CLUTStore& getInstance();
 
     std::shared_ptr<HaldCLUT> getClut(const Glib::ustring& filename) const;
+#ifdef ART_USE_OCIO
+    OCIO::ConstProcessorRcPtr getOCIOLut(const Glib::ustring &filename) const;
+#endif // ART_USE_OCIO
 
     void clearCache();
 
@@ -67,6 +73,10 @@ private:
     CLUTStore();
 
     mutable Cache<Glib::ustring, std::shared_ptr<HaldCLUT>> cache;
+#ifdef ART_USE_OCIO
+    mutable Cache<Glib::ustring, OCIO::ConstProcessorRcPtr> ocio_cache_;
+#endif // ART_USE_OCIO
+    mutable MyMutex mutex_;
 };
 
 
@@ -94,8 +104,14 @@ private:
     vfloat v_xyz2clut_[3][3] ALIGNED16;
     vfloat v_clut2xyz_[3][3] ALIGNED16;
     vfloat v_xyz2work_[3][3] ALIGNED16;
-#endif
+#endif // __SSE2__
+#ifdef ART_USE_OCIO
+    OCIO::ConstCPUProcessorRcPtr ocio_processor_;
+    bool OCIO_init(float strength, int tile_size);
+    void OCIO_apply(float *r, float *g, float *b, int istart, int jstart, int tW, int tH);
+    float conv_[3][3];
+    float iconv_[3][3];
+#endif // ART_USE_OCIO
 };
 
-
-}
+} // namespace rtengine
