@@ -8,7 +8,7 @@ set(PROC_TARGET_1_FLAGS "-mtune=generic" CACHE STRING "Processor-1 flags")
 set(PROC_TARGET_2_LABEL native CACHE STRING "Processor-2 label - use it for your own build")
 
 # The flag is different on x86 and Arm based processors
-if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL arm64)
+if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL arm64 OR CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL ppc64le OR CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL ppc64)
     set(PROC_TARGET_2_FLAGS "-mcpu=native" CACHE STRING "Processor-2 flags")
 else()
     set(PROC_TARGET_2_FLAGS "-march=native" CACHE STRING "Processor-2 flags")
