@@ -598,6 +598,7 @@ HISTORY_MSG_LOGENC_GAIN;Log - Gain
 HISTORY_MSG_LOGENC_WHITE_EV;Log - White Ev
 HISTORY_MSG_LOGENC_TARGET_GRAY;Log - Target gray point
 HISTORY_MSG_LOGENC_SATCONTROL;Log - Saturation control
+HISTORY_MSG_LOGENC_HLCOMPRESSION;Log - Highlight precompression
 HISTORY_MSG_METADATA_MODE;Metadata copy mode
 HISTORY_MSG_MICROCONTRAST_CONTRAST;Microcontrast - Contrast threshold
 HISTORY_MSG_PCVIGNETTE_CENTER;VF - Center
@@ -1659,6 +1660,7 @@ TP_LOGENC_WHITE_EV;White relative exposure (Ev)
 TP_LOGENC_TARGET_GRAY;Target gray point (brightness)
 TP_LOGENC_LABEL;Log Tone Mapping
 TP_LOGENC_REGULARIZATION;Regularization
+TP_LOGENC_HLCOMPRESSION;Highlights precompression
 TP_METADATA_EDIT;Apply modifications
 TP_METADATA_MODE;Metadata copy mode
 TP_METADATA_STRIP;Strip all metadata

@@ -769,6 +769,7 @@ struct LogEncodingParams {
     double whiteEv;
     int regularization;
     bool satcontrol;
+    int highlightCompression;
 
     LogEncodingParams();
 

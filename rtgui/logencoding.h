@@ -52,6 +52,7 @@ private:
     Adjuster *whiteEv;
     Adjuster *regularization;
     Gtk::CheckButton *satcontrol;
+    Adjuster *highlightCompression;
 
     rtengine::ProcEvent EvEnabled;
     rtengine::ProcEvent EvAuto;
@@ -65,6 +66,7 @@ private:
     rtengine::ProcEvent EvWhiteEv;
     rtengine::ProcEvent EvRegularization;
     rtengine::ProcEvent EvSatControl;
+    rtengine::ProcEvent EvHLCompression;
 
     sigc::connection autoconn;
 

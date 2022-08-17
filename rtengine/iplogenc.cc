@@ -144,6 +144,8 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, int full
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(params->icm.workingProfile);
 
     const bool satcontrol = params->logenc.satcontrol;
+    const bool hlcompr = params->logenc.highlightCompression > 0;
+    const float hlcompr_factor = LIM01(float(params->logenc.highlightCompression) / 100.f);
 
     const auto apply =
         [=](float x, bool scale=true) -> float
@@ -153,6 +155,9 @@ void log_encode(Imagefloat *rgb, const ProcParams *params, float scale, int full
             }
             x = max(x, noise);
             x = max(x / gray, noise);
+            if (hlcompr && x >= 1.f) {
+                x = intp(hlcompr_factor, std::tanh(x-1.f)+1.f, x);
+            }
             x = max((xlogf(x)/log2 - shadows_range) / dynamic_range, noise);
             assert(x == x);
             if (linbase > 0.f) {
