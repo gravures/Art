@@ -179,6 +179,7 @@ ToneCurve::ToneCurve():
     satcurve2_ = static_cast<DiagonalCurveEditor *>(satcurveG->addCurve(CT_Diagonal, ""));
     satcurve2_->setBottomBarColorProvider(this, 1);
     satcurve2_->setLeftBarColorProvider(this, 2);
+    satcurve2_->setEditID(EUID_ToneCurveSaturation2, BT_SINGLEPLANE_FLOAT);
 
     satcurveG->curveListComplete();
     satcurveG->show();

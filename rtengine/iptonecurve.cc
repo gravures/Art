@@ -232,6 +232,7 @@ void apply_satcurve(Imagefloat *rgb, const FlatCurve &curve, const DiagonalCurve
     TMatrix ws = ICCStore::getInstance()->workingSpaceMatrix(working_profile);
     TMatrix iws = ICCStore::getInstance()->workingSpaceInverseMatrix(working_profile);
 
+    const bool use_c2 = !curve2.isIdentity();
     SatCurveRemap remap(whitept);
 
 #ifdef _OPENMP
@@ -248,7 +249,9 @@ void apply_satcurve(Imagefloat *rgb, const FlatCurve &curve, const DiagonalCurve
             Color::rgbxyz(R/65535.f, G/65535.f, B/65535.f, X, Y, Z, ws);
             Color::xyz2jzazbz(X, Y, Z, Jz, az, bz);
             Color::jzazbz2jzch(az, bz, cz, hz);
-            cz = curve2.getVal(cz);
+            if (use_c2) {
+                cz = curve2.getVal(cz * 50.f) / 50.f;
+            }
             float s = use_lut ? sat[Y * 65535.f] : curve.getVal(remap(Y)) * 2.f;
             cz *= s;
             Color::jzczhz2rgb(Jz, cz, hz, R, G, B, iws);
@@ -278,7 +281,7 @@ void fill_satcurve_pipette(Imagefloat *rgb, EditUniqueID editID, PlanarWhateverD
                 editWhatever->v(y, x) = LIM01(s);
             }
         }
-    } else {
+    } else if (editID == EUID_ToneCurveSaturation2) {
 #ifdef _OPENMP
 #       pragma omp parallel for if (multithread)
 #endif
@@ -288,16 +291,7 @@ void fill_satcurve_pipette(Imagefloat *rgb, EditUniqueID editID, PlanarWhateverD
                 float Jz, cz, hz;
                 Color::rgb2jzczhz(r / 65535.f, g / 65535.f, b / 65535.f, Jz, cz, hz, ws);
                 float v = 0.f;
-                if (editID == EUID_ToneCurveSaturationHMask) {
-                    v = hz / (2.f * RT_PI_F);
-                    if (v < 0) {
-                        v += 1.f;
-                    } else if (v > 1.f) {
-                        v -= 1.f;
-                    }
-                } else {
-                    v = Jz > 1e-7f ? cz * 50 : 0.f;
-                }
+                v = Jz > 1e-7f ? cz * 50 : 0.f;
                 editWhatever->v(y, x) = LIM01(v);
             }
         }
@@ -395,7 +389,7 @@ void ImProcFunctions::toneCurve(Imagefloat *img)
 
     if ((editID == EUID_ToneCurve1 || editID == EUID_ToneCurve2) && pipetteBuffer->getDataProvider()->getCurrSubscriber()->getPipetteBufferType() == BT_IMAGEFLOAT) {
         editImgFloat = pipetteBuffer->getImgFloatBuffer();
-    } else if ((editID == EUID_ToneCurveSaturation || editID == EUID_ToneCurveSaturationHMask || editID == EUID_ToneCurveSaturationCMask) && pipetteBuffer->getDataProvider()->getCurrSubscriber()->getPipetteBufferType() == BT_SINGLEPLANE_FLOAT) {
+    } else if ((editID == EUID_ToneCurveSaturation || editID == EUID_ToneCurveSaturation2) && pipetteBuffer->getDataProvider()->getCurrSubscriber()->getPipetteBufferType() == BT_SINGLEPLANE_FLOAT) {
         editWhatever = pipetteBuffer->getSinglePlaneBuffer();
     }
 
