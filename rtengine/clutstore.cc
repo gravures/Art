@@ -670,6 +670,8 @@ void HaldCLUTApplication::OCIO_apply(Imagefloat *img)
     const int W = img->getWidth();
     const int H = img->getHeight();
 
+    const bool blend = strength_ < 1.f;
+
 #ifdef _OPENMP
 #   pragma omp parallel for if (multiThread_)
 #endif
@@ -695,9 +697,15 @@ void HaldCLUTApplication::OCIO_apply(Imagefloat *img)
             v[2] = data[i++];
             v = dot_product(iconv_, v);
             // no need to renormalize to 65535 as this is already done in iconv_
-            img->r(y, x) = v[0];
-            img->g(y, x) = v[1];
-            img->b(y, x) = v[2];
+            if (blend) {
+                img->r(y, x) = intp(strength_, v[0], img->r(y, x));
+                img->g(y, x) = intp(strength_, v[1], img->g(y, x));
+                img->b(y, x) = intp(strength_, v[2], img->b(y, x));
+            } else {
+                img->r(y, x) = v[0];
+                img->g(y, x) = v[1];
+                img->b(y, x) = v[2];
+            }
         }
     }
 
