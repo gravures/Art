@@ -11,6 +11,7 @@
 #include "alignedbuffer.h"
 #include "noncopyable.h"
 #include "iccstore.h"
+#include "imagefloat.h"
 
 #ifdef ART_USE_OCIO
 #  include <OpenColorIO/OpenColorIO.h>
@@ -82,17 +83,18 @@ private:
 
 class HaldCLUTApplication {
 public:
-    HaldCLUTApplication(const Glib::ustring &clut_filename, const Glib::ustring &working_profile);
-    void init(float strength, int tile_size);
-    void operator()(float *r, float *g, float *b, int istart, int jstart, int tW, int tH);
+    HaldCLUTApplication(const Glib::ustring &clut_filename, const Glib::ustring &working_profile, float strength, bool multiThread);
+    void operator()(Imagefloat *img);
     operator bool() const { return ok_; }
 
 private:
+    void init();
+    void apply_tile(float *r, float *g, float *b, int istart, int jstart, int tW, int tH);
     Glib::ustring clut_filename_;
     Glib::ustring working_profile_;
     bool ok_;
     bool clut_and_working_profiles_are_same_;
-    int TS_;
+    bool multiThread_;
     float strength_;
     std::shared_ptr<HaldCLUT> hald_clut_;
     TMatrix wprof_;
@@ -105,10 +107,12 @@ private:
     vfloat v_clut2xyz_[3][3] ALIGNED16;
     vfloat v_xyz2work_[3][3] ALIGNED16;
 #endif // __SSE2__
+
 #ifdef ART_USE_OCIO
+    bool OCIO_init();
+    void OCIO_apply(Imagefloat *img);
+
     OCIO::ConstCPUProcessorRcPtr ocio_processor_;
-    bool OCIO_init(float strength, int tile_size);
-    void OCIO_apply(float *r, float *g, float *b, int istart, int jstart, int tW, int tH);
     float conv_[3][3];
     float iconv_[3][3];
 #endif // ART_USE_OCIO

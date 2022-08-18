@@ -109,7 +109,9 @@ vfloat2 getClutValues(const AlignedBuffer<std::uint16_t>& clut_image, size_t ind
 }
 #endif
 
-}
+constexpr int TS = 112;
+
+} // namespace
 
 rtengine::HaldCLUT::HaldCLUT() :
     clut_level(0),
@@ -430,30 +432,28 @@ rtengine::CLUTStore::CLUTStore() :
 // HaldCLUTApplication
 //-----------------------------------------------------------------------------
 
-HaldCLUTApplication::HaldCLUTApplication(const Glib::ustring &clut_filename, const Glib::ustring &working_profile):
+HaldCLUTApplication::HaldCLUTApplication(const Glib::ustring &clut_filename, const Glib::ustring &working_profile, float strength, bool multiThread):
     clut_filename_(clut_filename),
     working_profile_(working_profile),
     ok_(false),
     clut_and_working_profiles_are_same_(false),
-    TS_(0),
-    strength_(0)
+    multiThread_(multiThread),
+    strength_(strength)
 {
+    init();
 }
 
 
-void HaldCLUTApplication::init(float strength, int tile_size)
+void HaldCLUTApplication::init()
 {
     hald_clut_ = CLUTStore::getInstance().getClut(clut_filename_);
     if (!hald_clut_) {
 #ifdef ART_USE_OCIO
-        if (!OCIO_init(strength, tile_size))
+        if (!OCIO_init())
 #endif // ART_USE_OCIO
             ok_ = false;
         return;
     }
-
-    strength_ = strength;
-    TS_ = tile_size;
 
     clut_and_working_profiles_are_same_ = hald_clut_->getProfile() == working_profile_;
 
@@ -482,7 +482,7 @@ void HaldCLUTApplication::init(float strength, int tile_size)
 
 #ifdef ART_USE_OCIO
 
-bool HaldCLUTApplication::OCIO_init(float strength, int tile_size)
+bool HaldCLUTApplication::OCIO_init()
 {
     auto proc = CLUTStore::getInstance().getOCIOLut(clut_filename_);
     if (!proc) {
@@ -491,8 +491,6 @@ bool HaldCLUTApplication::OCIO_init(float strength, int tile_size)
     }
 
     try {
-        strength_ = strength;
-        TS_ = tile_size;
         ok_ = true;
 
         ocio_processor_ = proc->getOptimizedCPUProcessor(OCIO::BIT_DEPTH_F32, 
@@ -506,7 +504,7 @@ bool HaldCLUTApplication::OCIO_init(float strength, int tile_size)
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
                 conv_[i][j] = ws[i][j];
-                iconv_[i][j] = iws[i][j];
+                iconv_[i][j] = iws[i][j] * 65535.f;
             }
         }
         
@@ -520,7 +518,7 @@ bool HaldCLUTApplication::OCIO_init(float strength, int tile_size)
 
 
 
-void HaldCLUTApplication::operator()(float *r, float *g, float *b, int istart, int jstart, int tW, int tH)
+void HaldCLUTApplication::operator()(Imagefloat *img)
 {
     if (!ok_) {
         return;
@@ -528,15 +526,33 @@ void HaldCLUTApplication::operator()(float *r, float *g, float *b, int istart, i
 
 #ifdef ART_USE_OCIO
     if (ocio_processor_) {
-        OCIO_apply(r, g, b, istart, jstart, tW, tH);
+        OCIO_apply(img);
         return;
     }
 #endif // ART_USE_OCIO
 
-    float out_rgbx[4 * TS_] ALIGNED16; // Line buffer for CLUT
-    float clutr[TS_] ALIGNED16;
-    float clutg[TS_] ALIGNED16;
-    float clutb[TS_] ALIGNED16;
+#ifdef _OPENMP
+#   pragma omp parallel for if (multiThread_)
+#endif
+    for (int y = 0; y < img->getHeight(); ++y) {
+        for (int jj = 0; jj < img->getWidth(); jj += TS) {
+            int jstart = jj;
+            float *r = img->r(y)+jstart;
+            float *g = img->g(y)+jstart;
+            float *b = img->b(y)+jstart;
+            int tW = min(jj + TS, img->getWidth());
+            apply_tile(r, g, b, 0, jstart, tW, 1);
+        }
+    }
+}
+
+
+inline void HaldCLUTApplication::apply_tile(float *r, float *g, float *b, int istart, int jstart, int tW, int tH)
+{
+    float out_rgbx[4 * TS] ALIGNED16; // Line buffer for CLUT
+    float clutr[TS] ALIGNED16;
+    float clutg[TS] ALIGNED16;
+    float clutb[TS] ALIGNED16;
     
     for (int i = istart, ti = 0; i < tH; i++, ti++) {
         if (!clut_and_working_profiles_are_same_) {
@@ -546,9 +562,9 @@ void HaldCLUTApplication::operator()(float *r, float *g, float *b, int istart, i
 
 #ifdef __SSE2__
             for (; j < tW - 3; j += 4, tj += 4) {
-                vfloat sourceR = LVF(r[ti * TS_ + tj]);
-                vfloat sourceG = LVF(g[ti * TS_ + tj]);
-                vfloat sourceB = LVF(b[ti * TS_ + tj]);
+                vfloat sourceR = LVF(r[ti * TS + tj]);
+                vfloat sourceG = LVF(g[ti * TS + tj]);
+                vfloat sourceB = LVF(b[ti * TS + tj]);
 
                 vfloat x;
                 vfloat y;
@@ -564,18 +580,18 @@ void HaldCLUTApplication::operator()(float *r, float *g, float *b, int istart, i
 #endif
 
             for (; j < tW; j++, tj++) {
-                float sourceR = r[ti * TS_ + tj];
-                float sourceG = g[ti * TS_ + tj];
-                float sourceB = b[ti * TS_ + tj];
+                float sourceR = r[ti * TS + tj];
+                float sourceG = g[ti * TS + tj];
+                float sourceB = b[ti * TS + tj];
 
                 float x, y, z;
                 Color::rgbxyz(sourceR, sourceG, sourceB, x, y, z, wprof_);
                 Color::xyz2rgb(x, y, z, clutr[tj], clutg[tj], clutb[tj], xyz2clut_);
             }
         } else {
-            memcpy(clutr, &r[ti * TS_], sizeof(float) * TS_);
-            memcpy(clutg, &g[ti * TS_], sizeof(float) * TS_);
-            memcpy(clutb, &b[ti * TS_], sizeof(float) * TS_);
+            memcpy(clutr, &r[ti * TS], sizeof(float) * TS);
+            memcpy(clutg, &g[ti * TS], sizeof(float) * TS);
+            memcpy(clutb, &b[ti * TS], sizeof(float) * TS);
         }
 
         for (int j = jstart, tj = 0; j < tW; j++, tj++) {
@@ -589,7 +605,7 @@ void HaldCLUTApplication::operator()(float *r, float *g, float *b, int istart, i
             sourceB = Color::gamma_srgbclipped(sourceB);
         }
 
-        hald_clut_->getRGB(strength_, std::min(TS_, tW - jstart), clutr, clutg, clutb, out_rgbx);
+        hald_clut_->getRGB(strength_, std::min(TS, tW - jstart), clutr, clutg, clutb, out_rgbx);
 
         for (int j = jstart, tj = 0; j < tW; j++, tj++) {
             float &sourceR = clutr[tj];
@@ -639,34 +655,52 @@ void HaldCLUTApplication::operator()(float *r, float *g, float *b, int istart, i
         }
 
         for (int j = jstart, tj = 0; j < tW; j++, tj++) {
-            r[ti * TS_ + tj] = clutr[tj];
-            g[ti * TS_ + tj] = clutg[tj];
-            b[ti * TS_ + tj] = clutb[tj];
+            r[ti * TS + tj] = clutr[tj];
+            g[ti * TS + tj] = clutg[tj];
+            b[ti * TS + tj] = clutb[tj];
         }
-    }
+    }    
 }
+
 
 #ifdef ART_USE_OCIO
 
-void HaldCLUTApplication::OCIO_apply(float *r, float *g, float *b, int istart, int jstart, int tW, int tH)
+void HaldCLUTApplication::OCIO_apply(Imagefloat *img)
 {
-    Vec3<float> data;
-    for (int i = istart, ti = 0; i < tH; ++i, ++ti) {
-        for (int j = jstart, tj = 0; j < tW; ++j, ++tj) {
-            data[0] = r[ti * TS_ + tj] / 65535.f;
-            data[1] = g[ti * TS_ + tj] / 65535.f;
-            data[2] = b[ti * TS_ + tj] / 65535.f;
-            data = dot_product(conv_, data);
+    const int W = img->getWidth();
+    const int H = img->getHeight();
 
-            OCIO::PackedImageDesc img(data, 1, 1, 3);
-            ocio_processor_->apply(img);
+#ifdef _OPENMP
+#   pragma omp parallel for if (multiThread_)
+#endif
+    for (int y = 0; y < H; ++y) {
+        Vec3<float> v;
+        std::vector<float> data(W * 3);
+        for (int x = 0, i = 0; x < W; ++x) {
+            v[0] = img->r(y, x) / 65535.f;
+            v[1] = img->g(y, x) / 65535.f;
+            v[2] = img->b(y, x) / 65535.f;
+            v = dot_product(conv_, v);
+            data[i++] = v[0];
+            data[i++] = v[1];
+            data[i++] = v[2];
+        }
+
+        OCIO::PackedImageDesc pd(&data[0], W, 1, 3);
+        ocio_processor_->apply(pd);
             
-            data = dot_product(iconv_, data);
-            r[ti * TS_ + tj] = data[0] * 65535.f;
-            g[ti * TS_ + tj] = data[1] * 65535.f;
-            b[ti * TS_ + tj] = data[2] * 65535.f;
+        for (int x = 0, i = 0; x < W; ++x) {
+            v[0] = data[i++];
+            v[1] = data[i++];
+            v[2] = data[i++];
+            v = dot_product(iconv_, v);
+            // no need to renormalize to 65535 as this is already done in iconv_
+            img->r(y, x) = v[0];
+            img->g(y, x) = v[1];
+            img->b(y, x) = v[2];
         }
     }
+
 }
 
 #endif // ART_USE_OCIO
