@@ -235,7 +235,7 @@ void BatchQueuePanel::updateTab (int qsize, int forceOrientation)
     }
 
     Gtk::Grid* grid = Gtk::manage (new Gtk::Grid ());
-    if ((forceOrientation == 0 && options.mainNBVertical) || (forceOrientation == 2)) {
+    if ((forceOrientation == 0) || (forceOrientation == 2)) {
         Gtk::Label* l;
 
         if(!qsize ) {

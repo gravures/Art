@@ -643,6 +643,9 @@ EditorPanel::EditorPanel (FilePanel* filePanel)
         tbTopPanel_1 = new Gtk::ToggleButton ();
         iTopPanel_1_Show = new RTImage ("panel-to-bottom.png");
         iTopPanel_1_Hide = new RTImage ("panel-to-top.png");
+        if (options.filmstripBottom) {
+            std::swap(iTopPanel_1_Show, iTopPanel_1_Hide);
+        }
         tbTopPanel_1->set_relief (Gtk::RELIEF_NONE);
         tbTopPanel_1->set_active (true);
         tbTopPanel_1->set_tooltip_markup (M ("MAIN_TOOLTIP_SHOWHIDETP1"));
@@ -848,8 +851,10 @@ EditorPanel::EditorPanel (FilePanel* filePanel)
     stb2->set_name("EditorToolbarBottom");
     stb2->add(*iops);
 
-    editbox->pack_start (*stb2, Gtk::PACK_SHRINK, 0);
     editbox->show_all ();
+
+    Gtk::VBox *vb = Gtk::manage(new Gtk::VBox());
+    stb2->show_all();
 
     // build screen
     hpanedl = Gtk::manage (new Gtk::Paned (Gtk::ORIENTATION_HORIZONTAL));
@@ -869,12 +874,22 @@ EditorPanel::EditorPanel (FilePanel* filePanel)
 
     if (filePanel) {
         catalogPane = new Gtk::Paned();
-        viewpaned->pack1 (*catalogPane, false, true);
+        if (options.filmstripBottom) {
+            viewpaned->pack2(*catalogPane, false, true);
+        } else {
+            viewpaned->pack1(*catalogPane, false, true);
+        }
     }
 
-    viewpaned->pack2 (*editbox, true, true);
+    if (options.filmstripBottom) {
+        viewpaned->pack1(*editbox, true, true);
+    } else {
+        viewpaned->pack2(*editbox, true, true);
+    }
 
-    hpanedl->pack2 (*viewpaned, true, true);
+    vb->pack_start(*viewpaned, true, true);
+    vb->pack_start(*stb2, Gtk::PACK_SHRINK, 0);
+    hpanedl->pack2(*vb, true, true);
 
     hpanedr->pack1 (*hpanedl, true, false);
     hpanedr->pack2 (*vboxright, false, false);

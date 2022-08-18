@@ -851,7 +851,7 @@ MAIN_TOOLTIP_PREVIEWSHARPMASK;Preview the <b>sharpening contrast mask</b>.\nShor
 MAIN_TOOLTIP_QINFO;Quick info on the image.\nShortcut: <b>Shift-i</b>
 MAIN_TOOLTIP_SHOWHIDELP1;Show/Hide the left panel.\nShortcut: <b>l</b>
 MAIN_TOOLTIP_SHOWHIDERP1;Show/Hide the right panel.\nShortcut: <b>Ctrl-l</b>
-MAIN_TOOLTIP_SHOWHIDETP1;Show/Hide the top panel.\nShortcut: <b>Shift-l</b>
+MAIN_TOOLTIP_SHOWHIDETP1;Show/Hide the filmstrip panel.\nShortcut: <b>Shift-l</b>
 MAIN_TOOLTIP_THRESHOLD;Threshold
 MAIN_TOOLTIP_TOGGLE;Toggle the <b>Before</b>/<b>After</b> view.\nShortcut: <b>Shift-a</b>
 METADATA_LOAD_ERROR;Error loading metadata from %1: %2
@@ -1119,7 +1119,7 @@ PREFERENCES_SHOWEXPOSURECOMPENSATION;Append exposure compensation
 PREFERENCES_SHOWFILMSTRIPTOOLBAR;Show Filmstrip toolbar
 PREFERENCES_SHTHRESHOLD;Threshold for clipped shadows
 PREFERENCES_SINGLETAB;Single Editor Tab Mode
-PREFERENCES_SINGLETABVERTAB;Single Editor Tab Mode, Vertical Tabs
+PREFERENCES_SINGLETABBOTTOM;Single Editor Tab Mode, Filmstrip below Editor
 PREFERENCES_SND_HELP;Enter a full file path to set a sound, or leave blank for no sound.\nFor system sounds on Windows use "SystemDefault", "SystemAsterisk" etc., and on Linux use "complete", "window-attention" etc.
 PREFERENCES_SND_LNGEDITPROCDONE;Editor processing done
 PREFERENCES_SND_BATCHQUEUEDONE;Queue processing done

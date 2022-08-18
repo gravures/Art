@@ -434,8 +434,8 @@ void Options::setDefaults()
     showFileNames = true;
     filmStripShowFileNames = false;
     tabbedUI = false;
-    mainNBVertical = true;
     multiDisplayMode = 0;
+    filmstripBottom = false;
     histogramPosition = 1;
     histogramRed = true;
     histogramGreen = true;
@@ -1378,8 +1378,8 @@ void Options::readFromFile(Glib::ustring fname)
                     showInfo = keyFile.get_boolean("GUI", "ShowInfo");
                 }
 
-                if (keyFile.has_key("GUI", "MainNBVertical")) {
-                    mainNBVertical = keyFile.get_boolean("GUI", "MainNBVertical");
+                if (keyFile.has_key("GUI", "FilmStripBottom")) {
+                    filmstripBottom = keyFile.get_boolean("GUI", "FilmStripBottom");
                 }
 
                 if (keyFile.has_key("GUI", "ShowClippedHighlights")) {
@@ -2039,7 +2039,7 @@ void Options::saveToFile(Glib::ustring fname)
         keyFile.set_boolean("GUI", "RememberZoomAndPan", rememberZoomAndPan);
         keyFile.set_boolean("GUI", "ShowHistory", showHistory);
         keyFile.set_boolean("GUI", "ShowInfo", showInfo);
-        keyFile.set_boolean("GUI", "MainNBVertical", mainNBVertical);
+        keyFile.set_boolean("GUI", "FilmStripBottom", filmstripBottom);
         keyFile.set_boolean("GUI", "ShowClippedHighlights", showClippedHighlights);
         keyFile.set_boolean("GUI", "ShowClippedShadows", showClippedShadows);
         keyFile.set_integer("GUI", "FrameColor", bgcolor);

@@ -519,17 +519,11 @@ RTWindow::RTWindow():
         setExpandAlignProperties (fpanelLabelGrid, false, false, Gtk::ALIGN_CENTER, Gtk::ALIGN_CENTER);
         Gtk::Label* fpl = Gtk::manage (new Gtk::Label ( Glib::ustring (" ") + M ("MAIN_FRAME_EDITOR") ));
 
-        if (options.mainNBVertical) {
-            mainNB->set_tab_pos (Gtk::POS_LEFT);
-            fpl->set_angle (90);
-            RTImage* folderIcon = Gtk::manage (new RTImage ("folder-closed.png"));
-            fpanelLabelGrid->attach_next_to (*folderIcon, Gtk::POS_TOP, 1, 1);
-            fpanelLabelGrid->attach_next_to (*fpl, Gtk::POS_TOP, 1, 1);
-        } else {
-            RTImage* folderIcon = Gtk::manage (new RTImage ("folder-closed.png"));
-            fpanelLabelGrid->attach_next_to (*folderIcon, Gtk::POS_RIGHT, 1, 1);
-            fpanelLabelGrid->attach_next_to (*fpl, Gtk::POS_RIGHT, 1, 1);
-        }
+        mainNB->set_tab_pos (Gtk::POS_LEFT);
+        fpl->set_angle (90);
+        RTImage* folderIcon = Gtk::manage (new RTImage ("folder-closed.png"));
+        fpanelLabelGrid->attach_next_to (*folderIcon, Gtk::POS_TOP, 1, 1);
+        fpanelLabelGrid->attach_next_to (*fpl, Gtk::POS_TOP, 1, 1);
 
         fpanelLabelGrid->set_tooltip_markup (M ("MAIN_FRAME_FILEBROWSER_TOOLTIP"));
         fpanelLabelGrid->show_all ();
@@ -542,10 +536,7 @@ RTWindow::RTWindow():
         // decorate tab, the label is unimportant since its updated in batchqueuepanel anyway
         Gtk::Label* lbq = Gtk::manage ( new Gtk::Label (M ("MAIN_FRAME_QUEUE")) );
 
-        if (options.mainNBVertical) {
-            lbq->set_angle (90);
-        }
-
+        lbq->set_angle (90);
         mainNB->append_page (*bpanel, *lbq);
 
 
@@ -581,22 +572,13 @@ RTWindow::RTWindow():
 
         setExpandAlignProperties (actionGrid, false, false, Gtk::ALIGN_CENTER, Gtk::ALIGN_CENTER);
 
-        if (options.mainNBVertical) {
-            prProgBar.set_orientation (Gtk::ORIENTATION_VERTICAL);
-            prProgBar.set_inverted (true);
-            actionGrid->set_orientation (Gtk::ORIENTATION_VERTICAL);
-            actionGrid->attach_next_to (prProgBar, Gtk::POS_BOTTOM, 1, 1);
-            actionGrid->attach_next_to (*preferences, Gtk::POS_BOTTOM, 1, 1);
-            actionGrid->attach_next_to (*btn_fullscreen, Gtk::POS_BOTTOM, 1, 1);
-            mainNB->set_action_widget (actionGrid, Gtk::PACK_END);
-        } else {
-            prProgBar.set_orientation (Gtk::ORIENTATION_HORIZONTAL);
-            actionGrid->set_orientation (Gtk::ORIENTATION_HORIZONTAL);
-            actionGrid->attach_next_to (prProgBar, Gtk::POS_RIGHT, 1, 1);
-            actionGrid->attach_next_to (*preferences, Gtk::POS_RIGHT, 1, 1);
-            actionGrid->attach_next_to (*btn_fullscreen, Gtk::POS_RIGHT, 1, 1);
-            mainNB->set_action_widget (actionGrid, Gtk::PACK_END);
-        }
+        prProgBar.set_orientation (Gtk::ORIENTATION_VERTICAL);
+        prProgBar.set_inverted (true);
+        actionGrid->set_orientation (Gtk::ORIENTATION_VERTICAL);
+        actionGrid->attach_next_to (prProgBar, Gtk::POS_BOTTOM, 1, 1);
+        actionGrid->attach_next_to (*preferences, Gtk::POS_BOTTOM, 1, 1);
+        actionGrid->attach_next_to (*btn_fullscreen, Gtk::POS_BOTTOM, 1, 1);
+        mainNB->set_action_widget (actionGrid, Gtk::PACK_END);
 
         actionGrid->show_all();
 
@@ -1213,9 +1195,6 @@ void RTWindow::setProgress(double p)
 
 void RTWindow::setProgressStr(const Glib::ustring& str)
 {
-    if (!options.mainNBVertical) {
-        prProgBar.set_text(str);
-    }
 }
 
 void RTWindow::setProgressState(bool inProcessing)
@@ -1431,11 +1410,8 @@ void RTWindow::createSetmEditor()
     setExpandAlignProperties (editorLabelGrid, false, false, Gtk::ALIGN_CENTER, Gtk::ALIGN_CENTER);
     Gtk::Label* const el = Gtk::manage (new Gtk::Label ( Glib::ustring (" ") + M ("MAIN_FRAME_EDITOR") ));
 
-    const auto pos = options.mainNBVertical ? Gtk::POS_TOP : Gtk::POS_RIGHT;
-
-    if (options.mainNBVertical) {
-        el->set_angle (90);
-    }
+    const auto pos = Gtk::POS_TOP;
+    el->set_angle(90);
 
     editorLabelGrid->attach_next_to (*Gtk::manage (new RTImage ("aperture.png")), pos, 1, 1);
     editorLabelGrid->attach_next_to (*el, pos, 1, 1);

@@ -253,7 +253,7 @@ public:
     ThumbnailOrder thumbnailOrder;
     bool showHistory;
     bool showInfo;
-    bool mainNBVertical;  // main notebook vertical tabs?
+    bool filmstripBottom;
     bool showClippedHighlights;
     bool showClippedShadows;
     int highlightThreshold;
