@@ -198,9 +198,9 @@ ToneCurve::ToneCurve():
     }
     contrast_legacy_box_->show_all();
 
-    whitePoint = Gtk::manage(new Adjuster(M("TP_TONECURVE_WHITEPOINT"), 1, 40.0, 0.1, 1.0));
+    whitePoint = Gtk::manage(new Adjuster(M("TP_TONECURVE_WHITEPOINT"), 1, 100.0, 0.1, 1.0));
     whitePoint->setAdjusterListener(this);
-    whitePoint->setLogScale(10, 1);
+    whitePoint->setLogScale(40, 1);
     pack_start(*whitePoint);
     
     mode_ = Gtk::manage(new MyComboBoxText());
