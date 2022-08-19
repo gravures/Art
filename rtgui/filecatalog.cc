@@ -920,7 +920,7 @@ void FileCatalog::_refreshProgressBar ()
         Gtk::Label *label = nullptr;
 
         int tot = previewsToLoad ? previewsToLoad : previewsLoaded;
-        grid->attach_next_to(*Gtk::manage(new RTImage("folder-closed.png")), Gtk::POS_TOP, 1, 1);
+        grid->attach_next_to(*Gtk::manage(new RTImage("folder-closed.png")), options.tabbedUI ? Gtk::POS_RIGHT : Gtk::POS_TOP, 1, 1);
         int filteredCount = fileBrowser->getNumFiltered() < 0 ? tot : min(fileBrowser->getNumFiltered(), tot);
 
         label = Gtk::manage(new Gtk::Label(M("MAIN_FRAME_FILEBROWSER") +
@@ -928,9 +928,10 @@ void FileCatalog::_refreshProgressBar ()
                                                + Glib::ustring::format(tot) +
                                                (filteredCount != tot ? "]" : ")")));
 
-        label->set_angle(90);
-
-        grid->attach_next_to(*label, Gtk::POS_TOP, 1, 1);
+        if (!options.tabbedUI) {
+            label->set_angle(90);
+        }
+        grid->attach_next_to(*label, !options.tabbedUI ? Gtk::POS_TOP : Gtk::POS_RIGHT, 1, 1);
         grid->set_tooltip_markup(M("MAIN_FRAME_FILEBROWSER_TOOLTIP"));
         grid->show_all();
 
