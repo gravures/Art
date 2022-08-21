@@ -1191,6 +1191,7 @@ void EditorPanel::open(Thumbnail* tmb, rtengine::InitialImage* isrc)
     }
 
     history->resetSnapShotNumber();
+    navigator->setMetaInfo(isrc->getMetaData());
     navigator->setInvalid(ipc->getFullWidth(),ipc->getFullHeight());
 
     history->setPParamsSnapshotListener(openThm);

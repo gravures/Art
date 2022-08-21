@@ -790,13 +790,13 @@ std::string FramesMetaData::expcompToString(double expcomp, bool maskZeroexpcomp
 
     if (maskZeroexpcomp) {
         if (expcomp != 0.0) {
-            sprintf (buffer, "%0.2f", expcomp);
+            sprintf (buffer, "%+0.2f", expcomp);
             return buffer;
         } else {
             return "";
         }
     } else {
-        sprintf (buffer, "%0.2f", expcomp);
+        sprintf (buffer, "%+0.2f", expcomp);
         return buffer;
     }
 }
