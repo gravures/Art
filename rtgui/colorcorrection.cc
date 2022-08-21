@@ -149,6 +149,9 @@ public:
                 };
             return Glib::ustring::compose("HSL S=%4 So=%5 h=%6\nH=%1\nS=%2\nL=%3", lbl(r.hue), lbl(r.sat), lbl(r.factor), r.inSaturation, r.outSaturation, r.hueshift);
         }   break;
+        case rtengine::procparams::ColorCorrectionParams::Mode::LUT:
+            return Glib::ustring::compose("LUT %1", Glib::path_get_basename(r.lutFilename));
+            break;
         default: {
             const auto round_ab = [](float v) -> float
                                   {
@@ -403,6 +406,7 @@ ColorCorrection::ColorCorrection(): FoldableToolPanel(this, "colorcorrection", M
     EvRgbLuminance = m->newEvent(EVENT, "HISTORY_MSG_COLORCORRECTION_RGBLUMINANCE");
     EvHueShift = m->newEvent(EVENT, "HISTORY_MSG_COLORCORRECTION_HUESHIFT");
     EvCompression = m->newEvent(EVENT, "HISTORY_MSG_COLORCORRECTION_COMPRESSION");
+    EvLUT = m->newEvent(EVENT, "HISTORY_MSG_COLORCORRECTION_LUT");
 
     EvList = m->newEvent(EVENT, "HISTORY_MSG_COLORCORRECTION_LIST");
     EvParametricMask = m->newEvent(EVENT, "HISTORY_MSG_COLORCORRECTION_PARAMETRICMASK");
@@ -427,6 +431,7 @@ ColorCorrection::ColorCorrection(): FoldableToolPanel(this, "colorcorrection", M
     mode->append(M("TP_COLORCORRECTION_MODE_JZAZBZ"));
     mode->append(M("TP_COLORCORRECTION_MODE_RGBCHANNELS"));
     mode->append(M("TP_COLORCORRECTION_MODE_HSL"));
+    mode->append(M("TP_COLORCORRECTION_MODE_LUT"));
     mode->set_active(0);
     mode->signal_changed().connect(sigc::mem_fun(*this, &ColorCorrection::modeChanged));
     
@@ -464,7 +469,7 @@ ColorCorrection::ColorCorrection(): FoldableToolPanel(this, "colorcorrection", M
     }    
     box_combined->pack_start(*nb, Gtk::PACK_SHRINK, 4);//wheel);
 
-    Gtk::Frame *satframe = Gtk::manage(new Gtk::Frame(M("TP_COLORCORRECTION_SATURATION")));
+    satframe = Gtk::manage(new Gtk::Frame(M("TP_COLORCORRECTION_SATURATION")));
     Gtk::VBox *satbox = Gtk::manage(new Gtk::VBox());
     inSaturation = Gtk::manage(new Adjuster(M("TP_COLORCORRECTION_IN"), -100, 100, 1, 0, nullptr, nullptr, nullptr, nullptr, false, true));
     inSaturation->setAdjusterListener(this);
@@ -599,6 +604,33 @@ ColorCorrection::ColorCorrection(): FoldableToolPanel(this, "colorcorrection", M
     }
     box_hsl->pack_start(*box_hsl_h);
 
+    lut_filename = Gtk::manage(new MyFileChooserButton(M("TP_COLORCORRECTION_LUT")));
+    box_lut = Gtk::manage(new Gtk::HBox());
+    box_lut->pack_start(*Gtk::manage(new Gtk::Label(M("TP_COLORCORRECTION_LUT_FILENAME") + ": ")), Gtk::PACK_SHRINK, 4);
+    box_lut->pack_start(*lut_filename, Gtk::PACK_EXPAND_WIDGET, 4);
+
+    {
+        Glib::RefPtr<Gtk::FileFilter> filter_lut = Gtk::FileFilter::create();
+        filter_lut->set_name(M("FILECHOOSER_FILTER_LUT"));
+        filter_lut->add_pattern("*.png");
+        filter_lut->add_pattern("*.PNG");
+        filter_lut->add_pattern("*.tif");
+        filter_lut->add_pattern("*.tiff");
+#ifdef ART_USE_OCIO
+        filter_lut->add_pattern("*.clf");
+        filter_lut->add_pattern("*.CLF");
+        filter_lut->add_pattern("*.clfz");
+        filter_lut->add_pattern("*.CLFZ");
+#endif
+        Glib::RefPtr<Gtk::FileFilter> filter_any = Gtk::FileFilter::create();
+        filter_any->set_name(M("FILECHOOSER_FILTER_ANY"));
+        filter_any->add_pattern("*");
+
+        lut_filename->add_filter(filter_lut);
+        lut_filename->add_filter(filter_any);
+    }
+    lut_filename->signal_selection_changed().connect(sigc::mem_fun(*this, &ColorCorrection::lutChanged));
+
     hueshift->delay = options.adjusterMaxDelay;
     inSaturation->delay = options.adjusterMaxDelay;
     outSaturation->delay = options.adjusterMaxDelay;
@@ -623,6 +655,7 @@ ColorCorrection::ColorCorrection(): FoldableToolPanel(this, "colorcorrection", M
     box->pack_start(*box_combined);
     box->pack_start(*box_rgb);
     box->pack_start(*box_hsl);
+    box->pack_start(*box_lut);
 
     show_all_children();
 }
@@ -838,6 +871,9 @@ void ColorCorrection::regionGet(int idx)
     case 1:
         r.mode = rtengine::procparams::ColorCorrectionParams::Mode::JZAZBZ;
         break;
+    case 4:
+        r.mode = rtengine::procparams::ColorCorrectionParams::Mode::LUT;
+        break;
     default:
         r.mode = rtengine::procparams::ColorCorrectionParams::Mode::YUV;
     }
@@ -874,6 +910,7 @@ void ColorCorrection::regionGet(int idx)
         r.factor[c] = lfactor[c]->getValue();
     }
     r.rgbluminance = rgbluminance->get_active();
+    r.lutFilename = Glib::filename_to_utf8(lut_filename->get_filename());
 }
 
 
@@ -893,6 +930,9 @@ void ColorCorrection::regionShow(int idx)
         break;
     case rtengine::procparams::ColorCorrectionParams::Mode::HSL:
         mode->set_active(3);
+        break;
+    case rtengine::procparams::ColorCorrectionParams::Mode::LUT:
+        mode->set_active(4);
         break;
     default:
         mode->set_active(0);
@@ -922,6 +962,7 @@ void ColorCorrection::regionShow(int idx)
         lfactor[c]->setValue(r.factor[c]);
     }
     rgbluminance->set_active(r.rgbluminance);
+    lut_filename->set_filename(Glib::filename_from_utf8(r.lutFilename));
     modeChanged();
     if (disable) {
         enableListener();
@@ -934,15 +975,19 @@ void ColorCorrection::modeChanged()
     removeIfThere(box, box_combined);
     removeIfThere(box, box_rgb);
     removeIfThere(box, box_hsl);
+    removeIfThere(box, box_lut);
     int row = mode->get_active_row_number();
     if (row < 2) {
         box->pack_start(*box_combined);
     } else if (row == 2) {
         box->pack_start(*box_rgb);
+    } else if (row == 4) {
+        box->pack_start(*box_lut);
     } else {
         box->pack_start(*box_hsl);
     }
-    hueframe->set_visible(mode->get_active_row_number() != 2);
+    satframe->set_visible(mode->get_active_row_number() != 4);
+    hueframe->set_visible(mode->get_active_row_number() != 2 && mode->get_active_row_number() != 4);
     if (listener && getEnabled()) {
         labMasks->setEdited(true);        
         listener->panelChanged(EvMode, mode->get_active_text());
@@ -1198,5 +1243,14 @@ void ColorCorrection::drawCurve(bool rgb, Cairo::RefPtr<Cairo::Context> cr, Glib
             }
             cr->stroke();            
         }
+    }
+}
+
+
+void ColorCorrection::lutChanged()
+{
+    if (listener) {
+        auto fn = Glib::filename_to_utf8(lut_filename->get_filename());
+        listener->panelChanged(EvLUT, Glib::path_get_basename(fn));
     }
 }

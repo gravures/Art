@@ -1282,7 +1282,8 @@ struct ColorCorrectionParams {
         YUV,
         RGB,
         HSL,
-        JZAZBZ
+        JZAZBZ,
+        LUT
     };
     struct Region {
         double a;
@@ -1300,6 +1301,7 @@ struct ColorCorrectionParams {
         std::array<double, 3> compression;
         bool rgbluminance;
         double hueshift;
+        Glib::ustring lutFilename;
         Mode mode;
 
         Region();
