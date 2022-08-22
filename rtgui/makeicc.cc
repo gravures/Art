@@ -283,9 +283,9 @@ cmsHPROFILE create_profile(bool v2, const std::pair<float, float> &whitept, cons
     cmsMLUsetASCII(mlu1, "en", "US", "Public Domain");
     cmsWriteTag(profile, cmsSigCopyrightTag, mlu1);
 
-    if (v2 && gamma > 0) {
+    {
         std::ostringstream buf;
-        buf << "g" << std::setw(6) << std::fixed << std::setprecision(6) << gamma << "s" << std::setw(6) << std::fixed << std::setprecision(5) << slope << "!";
+        buf << "#us/pixls/ART#" << std::setw(6) << std::fixed << std::setprecision(6) << gamma << ":" << std::setw(6) << std::fixed << std::setprecision(5) << slope << "!";
         auto s = buf.str();
         cmsMLUsetASCII(mlu2, "en", "US", s.c_str());
         cmsWriteTag(profile, cmsSigDeviceModelDescTag, mlu2);
@@ -306,61 +306,13 @@ cmsHPROFILE create_profile(bool v2, const std::pair<float, float> &whitept, cons
 }
 
 
-// https://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.2100-2-201807-I!!PDF-F.pdf
-// Perceptual Quantization / SMPTE standard ST.2084
-float PQ(float x)
-{
-    constexpr float M1 = 2610.0 / 16384.0;
-    constexpr float M2 = (2523.0 / 4096.0) * 128.0;
-    constexpr float C1 = 3424.0 / 4096.0;
-    constexpr float C2 = (2413.0 / 4096.0) * 32.0;
-    constexpr float C3 = (2392.0 / 4096.0) * 32.0;
-
-    if (x == 0.0) {
-        return 0.0;
-    }
-
-    float xpo = std::pow(x, 1.f / M2);
-    float num = std::max(xpo - C1, 0.f);
-    float den = C2 - C3 * xpo;
-    float res = std::pow(num / den, 1.f / M1);
-
-    return res;
-}
-
-// https://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.2100-2-201807-I!!PDF-F.pdf
-// Hybrid Log-Gamma
-float HLG(float x)
-{
-    constexpr float Beta  = 0.04;
-    constexpr float RA    = 5.591816309728916; // 1.0 / A where A = 0.17883277
-    constexpr float B     = 0.28466892; // 1.0 - 4.0 * A
-    constexpr float C     = 0.5599107295; // 0,5 –aln(4a)
-
-    float e = std::max(x * (1.f - Beta) + Beta, 0.f);
-
-    if (e == 0.0) {
-        return 0.0;
-    }
-
-    float res = 0.0;
-
-    if (e <= 0.5) {
-        res = e * e / 3.0;
-    } else {
-        res = (std::exp((e - C) * RA) + B) / 12.0;
-    }
-
-    return res;
-}
-
-cmsToneCurve *make_trc(size_t size, float (*trcFunc)(float))
+cmsToneCurve *make_trc(size_t size, float (*trcFunc)(float, bool))
 {
     std::vector<float> values(size);
 
     for (size_t i = 0; i < size; ++i) {
         float x = float(i) / (size - 1);
-        float y = std::min(trcFunc(x), 1.0f);
+        float y = std::min(trcFunc(x, false), 1.0f);
         values[i] = y;
     }
 
@@ -376,22 +328,9 @@ cmsToneCurve *make_trc(float gamma, float slope)
     if (slope == 0.f) {
         return cmsBuildGamma(NULL, gamma);
     } else {
-        constexpr double eps = 0.000000001; // not divide by zero
-        double pwr = 1.0 / gamma;
-        double ts = slope;
-        double slope2 = slope == 0 ? eps : slope;
-
-        rtengine::GammaValues out;
-        rtengine::Color::calcGamma(pwr, ts, out);
-
-        double params[5];
-        params[0] = gamma;
-        params[1] = 1. / (1.0 + out[4]);
-        params[2] = out[4] / (1.0 + out[4]);
-        params[3] = 1. / slope2;
-        params[4] = out[3] * ts;
-
-        return cmsBuildParametricToneCurve(NULL, 5, params);
+        rtengine::LMCSToneCurveParams params;
+        rtengine::Color::compute_LCMS_tone_curve_params(gamma, slope, params);
+        return cmsBuildParametricToneCurve(NULL, 5, &params[0]);
     }
 }
 
@@ -406,14 +345,14 @@ int ART_makeicc_main(std::ostream &out, const std::vector<std::string> &args)
 
     cmsToneCurve *trc = nullptr;
     if (opts.gamma == -2) {
-        trc = make_trc(4096, PQ);
+        trc = make_trc(4096, &rtengine::Color::eval_PQ_curve);
     } else if (opts.gamma == -1) {
-        trc = make_trc(4096, HLG);
+        trc = make_trc(4096, &rtengine::Color::eval_HLG_curve);
     } else {
         trc = make_trc(opts.gamma, opts.slope);
     }
 
-    cmsHPROFILE prof = create_profile(opts.v2, opts.whitepoint, opts.primaries, trc, opts.desc, opts.gamma, opts.slope);
+    cmsHPROFILE prof = create_profile(opts.v2, opts.whitepoint, opts.primaries, trc, opts.desc, opts.gamma, opts.gamma > 0.f ? opts.slope : 0.f);
 
     if (trc) {
         cmsFreeToneCurve(trc);
