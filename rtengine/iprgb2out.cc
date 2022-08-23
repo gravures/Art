@@ -416,7 +416,9 @@ Image8* ImProcFunctions::rgb2out(Imagefloat *img, int cx, int cy, int cw, int ch
             }
         } // End of parallelization
 
-        cmsDeleteTransform(hTransform);
+        if (hTransform) {
+            cmsDeleteTransform(hTransform);
+        }
     } else {
         const auto xyz_rgb = ICCStore::getInstance()->workingSpaceInverseMatrix(profile);
         copyAndClamp(img, image->data, xyz_rgb, multiThread);
