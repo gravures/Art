@@ -10,6 +10,7 @@
 #10 2022-06-12 alvaro
 #11 2022-07-14 v1.15 - alvaro
 #12 2022-07-25 alvaro
+#13 2022-08-22 alvaro
 # Translators please append a comment here with the current date and your name(s) as used in the RawTherapee/ART forum or Bitbucket page
 
 ABOUT_TAB_BUILD;Versione
@@ -227,6 +228,7 @@ FILECHOOSER_FILTER_LCP;Profili correzione obiettivi
 FILECHOOSER_FILTER_PP;Profili sviluppo
 FILECHOOSER_FILTER_SAME;Stesso formato come foto attuale
 FILECHOOSER_FILTER_TIFF;File TIFF
+FILECHOOSER_FILTER_LUT;File LUT supportati
 GENERAL_ABOUT;Informazioni
 GENERAL_AFTER;Dopo
 GENERAL_APPLY;Applica
@@ -519,6 +521,7 @@ HISTORY_MSG_COLORCORRECTION_INSATURATION;CC - saturazione ingresso
 HISTORY_MSG_COLORCORRECTION_LIGHTNESS;CC - luminosità
 HISTORY_MSG_COLORCORRECTION_LIGHTNESSMASK;CC - Maschera regione L
 HISTORY_MSG_COLORCORRECTION_LIST;CC - regioni
+HISTORY_MSG_COLORCORRECTION_LUT;CC - LUT
 HISTORY_MSG_COLORCORRECTION_MASKBLUR;CC - sfocatura maschera regioni
 HISTORY_MSG_COLORCORRECTION_MASK_POSTPROCESS;CC - post-elaborazione maschera
 HISTORY_MSG_COLORCORRECTION_MODE;CC - Modalità
@@ -1351,6 +1354,8 @@ TP_COLORCORRECTION_IN;Ingresso
 TP_COLORCORRECTION_L;Luminosità
 TP_COLORCORRECTION_LABEL;Correzione Colore/Tono
 TP_COLORCORRECTION_LIST_TITLE;Correzione
+TP_COLORCORRECTION_LUT_FILENAME;File LUT
+TP_COLORCORRECTION_MODE_LUT;LUT
 TP_COLORCORRECTION_MODE;Modalità
 TP_COLORCORRECTION_MODE_COMBINED;Standard
 TP_COLORCORRECTION_MODE_HSL;Fattori HSL
@@ -1620,7 +1625,7 @@ TP_LABMASKS_DRAWNMASK;Maschera con pennello
 TP_LABMASKS_DRAWNMASK_ADD_BOUNDED_TOOLTIP;Aggiunge la maschera pennello sopra le altre maschere, ma solo entro l'area della maschera attiva
 TP_LABMASKS_DRAWNMASK_ADD_TOOLTIP;Aggiunge la maschera pennello sopra le altre maschere
 TP_LABMASKS_DRAWNMASK_ERASE;Modalità gomma
-TP_LABMASKS_DRAWNMASK_HARDNESS;Durezza
+TP_LABMASKS_DRAWNMASK_GLOBAL;Impostazioni globali
 TP_LABMASKS_DRAWNMASK_INFO;%1 tratto/i
 TP_LABMASKS_DRAWNMASK_INTERSECT_TOOLTIP;Interseca la maschera pennello con le altre maschere
 TP_LABMASKS_DRAWNMASK_PEN_SETTINGS;Impostazioni pennello
@@ -1628,7 +1633,7 @@ TP_LABMASKS_DRAWNMASK_RADIUS;Raggio
 TP_LABMASKS_DRAWNMASK_RESET_TIP;Cancella tutti i tratti
 TP_LABMASKS_DRAWNMASK_SMOOTHNESS;Morbidezza
 TP_LABMASKS_DRAWNMASK_TOGGLE_TIP;Abilita il disegno sull'immagine con il pennello.\n\n<i>Se usi il mouse:</i>\n- Premi <b>Alt</b> per azionare temporaneamente la "modalità gomma";\n- Premi <b>Shift</b> per disegnare una linea dritta;\n- Use <b>Ctrl+rotella</b> per cambiare il raggio del pennello;\n- <b>Ctrl+Shift+rotella</b> per cambiare la durezza del pennello;\n- <b>Ctrl+click</b> per iniziare un nuovo gruppo di tratti senza cambiare parametri\n(così tratti multipli sulla stessa area si sommano);\n- Usa il <b>terzo pulsante</b> per disattivare il disegno su area.\n\n<i>Quando si usa un dispositivo sensibile al tocco:</i>\n- Usa il <b>primo pulsante</b> per invertire la "modalità gomma";\n- Premi <b>Shift</b> per disegnare una linea dritta;\n- Usa <b>Alt+primo pulsante</b> per aumentare il raggio del pennello, e\n- <b>Alt+secondo pulsante</b> per decrementarlo;\n- Usa il <b>secondo pulsante</b> per cambiare le modalità di sensibilità al tocco disponibili: off, durezza, raggio (premi <b>Shift</b> per invertire la direzione);\n- Usa <b>Ctrl+secondo pulsante</b> per disattivare il disegno sull'area.
-TP_LABMASKS_DRAWNMASK_TRANSPARENCY;Trasparenza
+TP_LABMASKS_DRAWNMASK_OPACITY;Opacità
 TP_LABMASKS_DRAWNMASK_UNDO_TIP;Rimuovi l'ultimo gruppo di tratti
 TP_LABMASKS_HUE;H
 TP_LABMASKS_INVERTED;Invertita
@@ -1945,3 +1950,4 @@ ZOOMPANEL_ZOOM100;Ingrandimento al 100%.\nScorciatoia: <b>z</b>
 ZOOMPANEL_ZOOMFITSCREEN;Adatta allo schermo.\nScorciatoia: <b>f</b>
 ZOOMPANEL_ZOOMIN;Ingrandisci.\nScorciatoia: <b>+</b>
 ZOOMPANEL_ZOOMOUT;Rimpicciolisci.\nScorciatoia: <b>-</b>
+
