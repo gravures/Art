@@ -305,21 +305,18 @@ FramesData::FramesData(const Glib::ustring &fname):
             lens = "Unknown";
         }
 
-        std::string datetime_taken;
-        if (find_exif_tag("Exif.Image.DateTimeOriginal")) {
-            datetime_taken = validateUtf8(pos->print(&exif));
-        } else if (find_exif_tag("Exif.Photo.DateTimeOriginal")) {
-            datetime_taken = validateUtf8(pos->print(&exif));
-        } else if (find_exif_tag("Exif.Photo.DateTimeDigitized")) {
-            datetime_taken = validateUtf8(pos->print(&exif));
-        } else if (find_exif_tag("Exif.Image.DateTime")) {
-            datetime_taken = validateUtf8(pos->print(&exif));
-        }
-        if (sscanf(datetime_taken.c_str(), "%d:%d:%d %d:%d:%d", &time.tm_year, &time.tm_mon, &time.tm_mday, &time.tm_hour, &time.tm_min, &time.tm_sec) == 6) {
-            time.tm_year -= 1900;
-            time.tm_mon -= 1;
-            time.tm_isdst = -1;
-            timeStamp = mktime(&time);
+        if (find_exif_tag("Exif.Image.DateTimeOriginal") || find_exif_tag("Exif.Photo.DateTimeOriginal") || find_exif_tag("Exif.Photo.DateTimeDigitized") || find_exif_tag("Exif.Image.DateTime")) {
+            std::string datetime_taken = validateUtf8(pos->print(&exif));
+            if (sscanf(datetime_taken.c_str(), "%d:%d:%d %d:%d:%d", &time.tm_year, &time.tm_mon, &time.tm_mday, &time.tm_hour, &time.tm_min, &time.tm_sec) == 6) {
+                auto d = Glib::DateTime::create_utc(time.tm_year, time.tm_mon, time.tm_mday, time.tm_hour, time.tm_min, time.tm_sec);
+                d.get_ymd(time.tm_year, time.tm_mon, time.tm_mday);
+                time.tm_year -= 1900;
+                time.tm_mon -= 1;
+                time.tm_hour = d.get_hour();
+                time.tm_min = d.get_minute();
+                time.tm_sec = d.get_second();
+                timeStamp = d.to_unix();
+            }
         }
 
         if (find_exif_tag("Exif.Image.ExposureBiasValue")) {
