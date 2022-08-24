@@ -15,6 +15,7 @@
 #14 2022-04-01 mrleemon, update for 1.13
 #15 2022-05-27 mrleemon, update for 1.14
 #16 2022-07-12 mrleemon, update for 1.15
+#17 2022-08-24 mrleemon, update for 1.16
 
 ABOUT_TAB_BUILD;Versió
 ABOUT_TAB_CREDITS;Crèdits
@@ -230,7 +231,8 @@ FILECHOOSER_FILTER_CURVE;Fitxers de corba
 FILECHOOSER_FILTER_LCP;Perfils de correcció de lents
 FILECHOOSER_FILTER_PP;Perfils de processament
 FILECHOOSER_FILTER_SAME;El mateix format que la foto actual
-FILECHOOSER_FILTER_TIFF;Fitxers TIFF 
+FILECHOOSER_FILTER_TIFF;Fitxers TIFF
+FILECHOOSER_FILTER_LUT;Fitxers LUT compatibles
 GENERAL_ABOUT;Sobre
 GENERAL_AFTER;Després
 GENERAL_APPLY;Aplica
@@ -541,6 +543,7 @@ HISTORY_MSG_COLORCORRECTION_DELTAEMASK;CC - màscara de similitud de color
 HISTORY_MSG_COLORCORRECTION_DRAWNMASK;CC - màscara de pinzell
 HISTORY_MSG_COLORCORRECTION_PARAMETRICMASK;CC - màscara paramètrica
 HISTORY_MSG_COLORCORRECTION_MASK_POSTPROCESS;CC - post-processament de màscara
+HISTORY_MSG_COLORCORRECTION_LUT;CC - LUT
 HISTORY_MSG_COLORTONING_LABGRID_VALUE;CC - Correcció de color
 HISTORY_MSG_DENOISE_CHROMINANCE_AUTO_FACTOR;RS - intensitat de crominància automàtica
 HISTORY_MSG_DENOISE_GUIDED_CHROMA_RADIUS;RS - Suavitzat final C
@@ -616,6 +619,8 @@ HISTORY_MSG_LOGENC_BLACK_EV;Log - Ev negre
 HISTORY_MSG_LOGENC_GAIN;Log - Guany
 HISTORY_MSG_LOGENC_WHITE_EV;Log - Ev blanc
 HISTORY_MSG_LOGENC_TARGET_GRAY;Log - Punt gris destí
+HISTORY_MSG_LOGENC_SATCONTROL;Log - Control de saturació
+HISTORY_MSG_LOGENC_HLCOMPRESSION;Log - Precompressió d'altes llums
 HISTORY_MSG_METADATA_MODE;Mode de còpia de metadades
 HISTORY_MSG_MICROCONTRAST_CONTRAST;Microcontrast - Llindar de contrast
 HISTORY_MSG_PCVIGNETTE_CENTER;FV - Centre
@@ -868,7 +873,7 @@ MAIN_TOOLTIP_PREVIEWSHARPMASK;Vista prèvia de la <b>màscara de contrast d'enfo
 MAIN_TOOLTIP_QINFO;Informació breu sobre la imatge.\nDrecera: <b>Majús-i</b>
 MAIN_TOOLTIP_SHOWHIDELP1;Mostra/Oculta el panell esquerre.\nDrecera: <b>l</b>
 MAIN_TOOLTIP_SHOWHIDERP1;Mostra/Oculta el panell dret.\nDrecera: <b>Ctrl-l</b>
-MAIN_TOOLTIP_SHOWHIDETP1;Mostra/Oculta el panell superior.\nDrecera: <b>Majús-l</b>
+MAIN_TOOLTIP_SHOWHIDETP1;Mostra/Oculta el panell de tira de pel·lícula.\nDrecera: <b>Majús-l</b>
 MAIN_TOOLTIP_THRESHOLD;Llindar
 MAIN_TOOLTIP_TOGGLE;Canvia la vista <b>abans</b>/<b>després</b>.\nDrecera: <b>Majús-a</b>
 METADATA_LOAD_ERROR;Error en carregar les metadades de %1: %2
@@ -1136,7 +1141,7 @@ PREFERENCES_SHOWEXPOSURECOMPENSATION;Annexa la compensació d'exposició
 PREFERENCES_SHOWFILMSTRIPTOOLBAR;Mostra la barra d'eines estil tira de pel·lícula
 PREFERENCES_SHTHRESHOLD;Llindar per a les ombres retallades
 PREFERENCES_SINGLETAB;Mode de pestanyes d'un sol editor
-PREFERENCES_SINGLETABVERTAB;Mode de pestanyes d'un sol editor, pestanyes verticals
+PREFERENCES_SINGLETABBOTTOM;Mode de pestanyes d'un sol editor, tira de pel·lícula a sota de l'editor
 PREFERENCES_SND_HELP;Introduïu una ruta de fitxer completa per establir un so, o deixeu en blanc si no desitgeu cap so.\nPer als sons de sistema a Windows, utilitzeu "SystemDefault", "SystemAsterisk", etc., i a Linux feu servir "complete", "window-attention", etc.
 PREFERENCES_SND_LNGEDITPROCDONE;El processament de l'editor ha finalitzat
 PREFERENCES_SND_BATCHQUEUEDONE;Treballs en cua finalitzats
@@ -1375,6 +1380,8 @@ TP_COLORCORRECTION_H;To
 TP_COLORCORRECTION_S;Saturació
 TP_COLORCORRECTION_HUESAT;To/Saturació
 TP_COLORCORRECTION_HUESHIFT;Alteració de to
+TP_COLORCORRECTION_LUT_FILENAME;Fitxer LUT
+TP_COLORCORRECTION_MODE_LUT;LUT
 TP_CROP_FIXRATIO;Bloqueja l'aspecte
 TP_CROP_GTDIAGONALS;Regla de diagonals
 TP_CROP_GTEPASSPORT;Passaport biomètric
@@ -1638,10 +1645,10 @@ TP_LABMASKS_DRAWNMASK_PEN_SETTINGS;Configuració de pinzell
 TP_LABMASKS_DRAWNMASK_RESET_TIP;Esborra tots els traços
 TP_LABMASKS_DRAWNMASK_UNDO_TIP;Esborra l'últim grup de traços
 TP_LABMASKS_DRAWNMASK_RADIUS;Radi
-TP_LABMASKS_DRAWNMASK_TRANSPARENCY;Transparència
+TP_LABMASKS_DRAWNMASK_OPACITY;Opacitat
 TP_LABMASKS_DRAWNMASK_SMOOTHNESS;Suavitzat
 TP_LABMASKS_DRAWNMASK_ERASE;Mode esborrador
-TP_LABMASKS_DRAWNMASK_HARDNESS;Duresa
+TP_LABMASKS_DRAWNMASK_GLOBAL;Opcions globals
 TP_LABMASKS_DRAWNMASK_INFO;%1 traç(os)
 TP_LABMASKS_DRAWNMASK_INTERSECT_TOOLTIP;Interseca la màscara de pinzell amb les altres màscares
 TP_LABMASKS_DRAWNMASK_ADD_TOOLTIP;Afegeix la màscara de pinzell sobre les altres màscares
@@ -1677,6 +1684,7 @@ TP_LOGENC_WHITE_EV;Exposició relativa al blanc (Ev)
 TP_LOGENC_TARGET_GRAY;Punt gris destí (brillantor)
 TP_LOGENC_LABEL;Mapeig de tons logarítmic
 TP_LOGENC_REGULARIZATION;Regularització
+TP_LOGENC_HLCOMPRESSION;Precompressió d'altes llums
 TP_METADATA_EDIT;Aplica modificacions
 TP_METADATA_MODE;Mode de còpia de metadades
 TP_METADATA_STRIP;Elimina totes les metadades

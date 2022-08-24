@@ -18,6 +18,7 @@
 #17 2022-04-01 mrleemon, update for 1.13
 #18 2022-05-27 mrleemon, update for 1.14
 #19 2022-07-12 mrleemon, update for 1.15
+#20 2022-08-24 mrleemon, update for 1.16
 
 ABOUT_TAB_BUILD;Versión
 ABOUT_TAB_CREDITS;Créditos
@@ -233,7 +234,8 @@ FILECHOOSER_FILTER_CURVE;Archivos de curva
 FILECHOOSER_FILTER_LCP;Perfiles de corrección de lentes
 FILECHOOSER_FILTER_PP;Perfiles de procesamiento
 FILECHOOSER_FILTER_SAME;El mismo formato que la foto actual
-FILECHOOSER_FILTER_TIFF;Archivos TIFF 
+FILECHOOSER_FILTER_TIFF;Archivos TIFF
+FILECHOOSER_FILTER_LUT;Archivos LUT compatibles
 GENERAL_ABOUT;Acerca de
 GENERAL_AFTER;Después
 GENERAL_APPLY;Aplicar
@@ -544,6 +546,7 @@ HISTORY_MSG_COLORCORRECTION_DELTAEMASK;CC - máscara de similitud de color
 HISTORY_MSG_COLORCORRECTION_DRAWNMASK;CC - máscara de pincel
 HISTORY_MSG_COLORCORRECTION_PARAMETRICMASK;CC - máscara paramétrica
 HISTORY_MSG_COLORCORRECTION_MASK_POSTPROCESS;CC - post-procesamiento de máscara
+HISTORY_MSG_COLORCORRECTION_LUT;CC - LUT
 HISTORY_MSG_COLORTONING_LABGRID_VALUE;CC - Corrección de color
 HISTORY_MSG_DENOISE_CHROMINANCE_AUTO_FACTOR;RR - intensidad de crominancia automática
 HISTORY_MSG_DENOISE_GUIDED_CHROMA_RADIUS;RR - Suavizado final C
@@ -619,6 +622,8 @@ HISTORY_MSG_LOGENC_BLACK_EV;Log - Ev negro
 HISTORY_MSG_LOGENC_GAIN;Log - Ganancia
 HISTORY_MSG_LOGENC_WHITE_EV;Log - Ev blanco
 HISTORY_MSG_LOGENC_TARGET_GRAY;Log - Punto gris destino
+HISTORY_MSG_LOGENC_SATCONTROL;Log - Control de saturación
+HISTORY_MSG_LOGENC_HLCOMPRESSION;Log - Precompresión de altas luces
 HISTORY_MSG_METADATA_MODE;Modo de copia de metadatos
 HISTORY_MSG_MICROCONTRAST_CONTRAST;Microcontraste - Umbral de contraste
 HISTORY_MSG_PCVIGNETTE_CENTER;FV - Centro
@@ -871,7 +876,7 @@ MAIN_TOOLTIP_PREVIEWSHARPMASK;Vista previa de la <b>máscara de contraste de enf
 MAIN_TOOLTIP_QINFO;Información breve sobre la imagen.\nAtajo: <b>Mayús-i</b>
 MAIN_TOOLTIP_SHOWHIDELP1;Mostrar/Ocultar el panel izquierdo.\nAtajo: <b>l</b>
 MAIN_TOOLTIP_SHOWHIDERP1;Mostrar/Ocultar el panel derecho.\nAtajo: <b>Ctrl-l</b>
-MAIN_TOOLTIP_SHOWHIDETP1;Mostrar/Ocultar el panel superior.\nAtajo: <b>Mayús-l</b>
+MAIN_TOOLTIP_SHOWHIDETP1;Mostrar/Ocultar el panel de tira de película.\nAtajo: <b>Mayús-l</b>
 MAIN_TOOLTIP_THRESHOLD;Umbral
 MAIN_TOOLTIP_TOGGLE;Cambiar la vista <b>antes</b>/<b>después</b>.\nAtajo: <b>Mayús-a</b>
 METADATA_LOAD_ERROR;Error al cargar los metadatos de %1: %2
@@ -1139,7 +1144,7 @@ PREFERENCES_SHOWEXPOSURECOMPENSATION;Anexar la compensación de exposición
 PREFERENCES_SHOWFILMSTRIPTOOLBAR;Mostrar barra de herramientas estilo tira de película
 PREFERENCES_SHTHRESHOLD;Umbral para las sombras cortadas
 PREFERENCES_SINGLETAB;Modo de pestañas de un solo editor
-PREFERENCES_SINGLETABVERTAB;Modo de pestañas de un solo editor, pestañas verticales
+PREFERENCES_SINGLETABBOTTOM;Modo de pestañas de un solo editor, tira de película debajo del editor
 PREFERENCES_SND_HELP;Introduzca una ruta de archivo completa para establecer un sonido, o deje en blanco si no desea ningún sonido.\nPara los sonidos de sistema en Windows, use "SystemDefault", "SystemAsterisk", etc., y en Linux use "complete", "window-attention", etc.
 PREFERENCES_SND_LNGEDITPROCDONE;El procesamiento del editor ha finalizado
 PREFERENCES_SND_BATCHQUEUEDONE;Trabajos en cola finalizados
@@ -1378,6 +1383,8 @@ TP_COLORCORRECTION_H;Tono
 TP_COLORCORRECTION_S;Saturación
 TP_COLORCORRECTION_HUESAT;Tono/Saturación
 TP_COLORCORRECTION_HUESHIFT;Alteración de tono
+TP_COLORCORRECTION_LUT_FILENAME;Archivo LUT
+TP_COLORCORRECTION_MODE_LUT;LUT
 TP_CROP_FIXRATIO;Bloquear aspecto
 TP_CROP_GTDIAGONALS;Regla de diagonales
 TP_CROP_GTEPASSPORT;Pasaporte biométrico
@@ -1641,10 +1648,10 @@ TP_LABMASKS_DRAWNMASK_PEN_SETTINGS;Ajustes de pincel
 TP_LABMASKS_DRAWNMASK_RESET_TIP;Borrar todos los trazos
 TP_LABMASKS_DRAWNMASK_UNDO_TIP;Borrar el último grupo de trazos
 TP_LABMASKS_DRAWNMASK_RADIUS;Radio
-TP_LABMASKS_DRAWNMASK_TRANSPARENCY;Transparencia
+TP_LABMASKS_DRAWNMASK_OPACITY;Opacidad
 TP_LABMASKS_DRAWNMASK_SMOOTHNESS;Suavizado
 TP_LABMASKS_DRAWNMASK_ERASE;Modo borrador
-TP_LABMASKS_DRAWNMASK_HARDNESS;Dureza
+TP_LABMASKS_DRAWNMASK_GLOBAL;Opciones globales
 TP_LABMASKS_DRAWNMASK_INFO;%1 trazo(s)
 TP_LABMASKS_DRAWNMASK_INTERSECT_TOOLTIP;Interseca la máscara de pincel con las otras máscaras
 TP_LABMASKS_DRAWNMASK_ADD_TOOLTIP;Añade la máscara de pincel encima de las otras máscaras
@@ -1680,6 +1687,7 @@ TP_LOGENC_WHITE_EV;Exposición relativa al blanco (Ev)
 TP_LOGENC_TARGET_GRAY;Punto gris destino (brillo)
 TP_LOGENC_LABEL;Mapeo de tonos logarítmico
 TP_LOGENC_REGULARIZATION;Regularización
+TP_LOGENC_HLCOMPRESSION;Precompresión de altas luces
 TP_METADATA_EDIT;Aplicar modificaciones
 TP_METADATA_MODE;Modo de copia de metadatos
 TP_METADATA_STRIP;Eliminar todos los metadatos

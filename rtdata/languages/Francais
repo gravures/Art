@@ -600,6 +600,7 @@ HISTORY_MSG_LOGENC_GAIN;Log - Gain
 HISTORY_MSG_LOGENC_WHITE_EV;Log - EV Blanc
 HISTORY_MSG_LOGENC_TARGET_GRAY;Log - Point gris cible
 HISTORY_MSG_LOGENC_SATCONTROL;Log - Contrôle de saturation
+HISTORY_MSG_LOGENC_HLCOMPRESSION;Log - Précompression des hautes lumières
 HISTORY_MSG_METADATA_MODE;Mode de copie des métadonnées
 HISTORY_MSG_MICROCONTRAST_CONTRAST;Microcontraste - Seuil de contraste
 HISTORY_MSG_PCVIGNETTE_CENTER;VF - Centre
