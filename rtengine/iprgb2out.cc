@@ -173,7 +173,8 @@ public:
     void operator()(const float *src, float *dst, int W)
     {
         Vec3<float> rgb;
-        for (int x = 0; x < W; x += 3) {
+        const int W3 = W * 3;
+        for (int x = 0; x < W3; x += 3) {
             rgb[0] = src[x];
             rgb[1] = src[x+1];
             rgb[2] = src[x+2];
