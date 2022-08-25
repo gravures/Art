@@ -96,7 +96,11 @@ int CacheImageData::load (const Glib::ustring& fname)
                     sec     = keyFile.get_integer ("DateTime", "Sec");
                 }
 
-                timestamp = Glib::DateTime::create_utc(year, month, day, hour, min, sec).to_unix();
+                if (g_date_valid_dmy(int(day), GDateMonth(month), year)) {
+                    timestamp = Glib::DateTime::create_utc(year, month, day, hour, min, sec).to_unix();
+                } else {
+                    timestamp = 0;
+                }
             }
 
             exifValid = false;
