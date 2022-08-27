@@ -86,9 +86,11 @@ inline void copyAndClamp(Imagefloat *src, unsigned char *dst, const float rgb_xy
 
 class ARTOutputProfile {
 public:
-    ARTOutputProfile(cmsHPROFILE prof, const procparams::ColorManagementParams &icm, const Glib::ustring &colorspace):
+    ARTOutputProfile(cmsHPROFILE prof, const procparams::ColorManagementParams &icm, const Glib::ustring &colorspace, int lutsz):
         mode_(MODE_INVALID),
-        tc_(nullptr)
+        tc_(nullptr),
+        lutsz_(lutsz),
+        factor_(float(lutsz-1))
     {
         auto ws = ICCStore::getInstance()->workingSpaceMatrix(colorspace);
         Mat33<float> m, mi;
@@ -115,6 +117,9 @@ public:
                 }
             }
             matrix_ = dot_product(mi, ws);
+        }
+        if (mode_ != MODE_INVALID && lutsz_ > 0) {
+            compute_lut();
         }
     }
 
@@ -144,24 +149,32 @@ public:
 
                 rgb = dot_product(matrix_, rgb);
 
-                switch (mode_) {
-                case MODE_LINEAR:
-                    break;
-                case MODE_PQ:
-                    for (int i = 0; i < 3; ++i) {
-                        rgb[i] = Color::eval_PQ_curve(rgb[i], true);
-                    }
-                    break;
-                case MODE_HLG:
-                    for (int i = 0; i < 3; ++i) {
-                        rgb[i] = Color::eval_HLG_curve(rgb[i], true);
-                    }
-                    break;
-                default: // MODE_GAMMA
-                    for (int i = 0; i < 3; ++i) {
-                        rgb[i] = cmsEvalToneCurveFloat(tc_, rgb[i]);
+                for (int i = 0; i < 3; ++i) {
+                    if (lutsz_ > 0 && rgb[i] <= 1.f) {
+                        rgb[i] = lut_[rgb[i] * factor_];
+                    } else {
+                        rgb[i] = eval(rgb[i]);
                     }
                 }
+
+                // switch (mode_) {
+                // case MODE_LINEAR:
+                //     break;
+                // case MODE_PQ:
+                //     for (int i = 0; i < 3; ++i) {
+                //         rgb[i] = Color::eval_PQ_curve(rgb[i], true);
+                //     }
+                //     break;
+                // case MODE_HLG:
+                //     for (int i = 0; i < 3; ++i) {
+                //         rgb[i] = Color::eval_HLG_curve(rgb[i], true);
+                //     }
+                //     break;
+                // default: // MODE_GAMMA
+                //     for (int i = 0; i < 3; ++i) {
+                //         rgb[i] = cmsEvalToneCurveFloat(tc_, rgb[i]);
+                //     }
+                // }
 
                 dst->r(y, x) = rgb[0] * 65535.f;
                 dst->g(y, x) = rgb[1] * 65535.f;
@@ -181,22 +194,11 @@ public:
 
             rgb = dot_product(matrix_, rgb);
 
-            switch (mode_) {
-            case MODE_LINEAR:
-                break;
-            case MODE_PQ:
-                for (int i = 0; i < 3; ++i) {
-                    rgb[i] = Color::eval_PQ_curve(rgb[i], true);
-                }
-                break;
-            case MODE_HLG:
-                for (int i = 0; i < 3; ++i) {
-                    rgb[i] = Color::eval_HLG_curve(rgb[i], true);
-                }
-                break;
-            default: // MODE_GAMMA
-                for (int i = 0; i < 3; ++i) {
-                    rgb[i] = cmsEvalToneCurveFloat(tc_, rgb[i]);
+            for (int i = 0; i < 3; ++i) {
+                if (lutsz_ > 0 && rgb[i] <= 1.f) {
+                    rgb[i] = lut_[rgb[i] * factor_];
+                } else {
+                    rgb[i] = eval(rgb[i]);
                 }
             }
 
@@ -207,10 +209,37 @@ public:
     }
 
 private:
+    float eval(float x)
+    {
+        switch (mode_) {
+        case MODE_LINEAR:
+            return x;
+        case MODE_PQ:
+            return Color::eval_PQ_curve(x, true);
+        case MODE_HLG:
+            return Color::eval_HLG_curve(x, true);
+        default: // MODE_GAMMA
+            return cmsEvalToneCurveFloat(tc_, x);
+        }
+    }
+    
+    void compute_lut()
+    {
+        lut_(lutsz_);
+        for (int i = 0; i < lutsz_; ++i) {
+            float x = float(i)/float(lutsz_-1);
+            float y = eval(x);
+            lut_[i] = y;
+        }
+    }
+    
     enum Mode { MODE_INVALID, MODE_LINEAR, MODE_GAMMA, MODE_HLG, MODE_PQ };
     Mode mode_;
     Mat33<float> matrix_;
     cmsToneCurve *tc_;
+    const int lutsz_;
+    const float factor_;
+    LUTf lut_;
 };
 
 } // namespace
@@ -362,7 +391,7 @@ Image8* ImProcFunctions::rgb2out(Imagefloat *img, int cx, int cy, int cw, int ch
 
         cmsHTRANSFORM hTransform = nullptr;
 
-        ARTOutputProfile op(oprof, icm, img->colorSpace());
+        ARTOutputProfile op(oprof, icm, img->colorSpace(), 256);
 
         if (!op) {
             cmsUInt32Number flags = cmsFLAGS_NOOPTIMIZE | cmsFLAGS_NOCACHE;
@@ -444,11 +473,11 @@ Imagefloat* ImProcFunctions::rgb2out(Imagefloat *img, const procparams::ColorMan
     if (oprof) {
         img->setMode(Imagefloat::Mode::RGB, multiThread);
 
-        ARTOutputProfile op(oprof, icm, img->colorSpace());
+        ARTOutputProfile op(oprof, icm, img->colorSpace(), cur_pipeline == Pipeline::OUTPUT ? -1 : (cur_pipeline == Pipeline::PREVIEW && scale == 1 ? 65536 : (cur_pipeline == Pipeline::THUMBNAIL ? 256 : 1024)));
         if (op) {
-            if (settings->verbose) {
-                std::cout << "rgb2out: converting using fast path" << std::endl;
-            }
+            // if (settings->verbose) {
+            //     std::cout << "rgb2out: converting using fast path" << std::endl;
+            // }
             op(img, image, multiThread);
         } else {
             cmsUInt32Number flags = cmsFLAGS_NOOPTIMIZE | cmsFLAGS_NOCACHE;
